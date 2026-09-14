@@ -6,5 +6,8 @@ lint-fix:
 	
 format:
 	golangci-lint fmt
+	
+test:
+	go test -race ./...
 
-.PHONY: lint lint-fix format
+.PHONY: lint lint-fix format test
