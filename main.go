@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,11 +12,15 @@ func main() {
 
 	r.Use(gin.Recovery())
 
-	r.GET("/ping", func(ctx *gin.Context) {
-		ctx.Writer.Write([]byte("pong"))
-	})
+	prepareHandlers(r)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
+}
+
+func prepareHandlers(router *gin.Engine) {
+	router.GET("/ping", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "pong")
+	})
 }
