@@ -1,3 +1,6 @@
+build:
+	go build -o bin/urlshort main.go
+
 lint:
 	golangci-lint run
 
@@ -10,4 +13,4 @@ format:
 test:
 	go test -race ./...
 
-.PHONY: lint lint-fix format test
+.PHONY: build lint lint-fix format test
