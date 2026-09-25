@@ -78,6 +78,9 @@ linters:
             - linters:
                   - revive
               text: "exported var Err.+ should have comment or be unexported"
+            - linters:
+                  - forcetypeassert
+              path: ".+testing.go$"
 
 formatters:
     enable:
@@ -87,7 +90,7 @@ formatters:
 
     settings:
         gofumpt:
-            module-path: code
+            module-path: hexleturlshort
             extra-rules: true
         gci:
             sections:

@@ -1,0 +1,59 @@
+package application
+
+import (
+	"context"
+
+	"github.com/stretchr/testify/mock"
+
+	"hexleturlshort/internal/links"
+)
+
+type fakeLinksStore struct {
+	mock.Mock
+}
+
+func (s *fakeLinksStore) GetLinks(ctx context.Context) ([]links.Link, error) {
+	args := s.Called(ctx)
+	return args.Get(0).([]links.Link), args.Error(1)
+}
+
+func (s *fakeLinksStore) GetLinkByID(ctx context.Context, id int64) (links.Link, error) {
+	args := s.Called(ctx, id)
+	return args.Get(0).(links.Link), args.Error(1)
+}
+
+func (s *fakeLinksStore) GetLinkByCode(ctx context.Context, code links.ShortCode) (links.Link, error) {
+	args := s.Called(ctx, code)
+	return args.Get(0).(links.Link), args.Error(1)
+}
+
+func (s *fakeLinksStore) CreateLink(ctx context.Context, link links.Link) (links.Link, error) {
+	args := s.Called(ctx, link)
+	return args.Get(0).(links.Link), args.Error(1)
+}
+
+func (s *fakeLinksStore) UpdateLink(ctx context.Context, link links.Link) (links.Link, error) {
+	args := s.Called(ctx, link)
+	return args.Get(0).(links.Link), args.Error(1)
+}
+
+func (s *fakeLinksStore) DeleteLink(ctx context.Context, id int64) error {
+	args := s.Called(ctx, id)
+	return args.Error(0)
+}
+
+type fakeShortcodeGen struct {
+	codes []string
+	calls int
+}
+
+func (g *fakeShortcodeGen) Generate() string {
+	if len(g.codes) == 0 {
+		return ""
+	}
+
+	code := g.codes[g.calls%len(g.codes)]
+	g.calls++
+
+	return code
+}
