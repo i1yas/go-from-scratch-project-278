@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -49,15 +50,15 @@ type fakeShortcodeGen struct {
 	calls int
 }
 
-func (g *fakeShortcodeGen) Generate() string {
+func (g *fakeShortcodeGen) Generate() (string, error) {
 	if len(g.codes) == 0 {
-		return ""
+		return "", errors.New("failed to generate")
 	}
 
 	code := g.codes[g.calls%len(g.codes)]
 	g.calls++
 
-	return code
+	return code, nil
 }
 
 func createValidLink(t *testing.T, codeRaw string) links.Link {

@@ -7,7 +7,7 @@ type Service struct {
 }
 
 type shortcodeGenerator interface {
-	Generate() string
+	Generate() (string, error)
 }
 
 // NewService takes dependencies and creates Service

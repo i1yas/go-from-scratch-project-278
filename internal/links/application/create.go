@@ -38,7 +38,13 @@ func (s *Service) CreateLink(ctx context.Context, params CreateLinkParams) (link
 	const triesCount = 3
 
 	for range triesCount {
-		code, err := links.NewShortCode(s.shortcodeGen.Generate())
+		codeRaw, err := s.shortcodeGen.Generate()
+		if err != nil {
+			return links.Link{}, fmt.Errorf("%w: %w",
+				ErrFailedToGenerateValidShortCode, err)
+		}
+
+		code, err := links.NewShortCode(codeRaw)
 		if err != nil {
 			return links.Link{}, fmt.Errorf("%w: %w",
 				ErrFailedToGenerateValidShortCode, err)
