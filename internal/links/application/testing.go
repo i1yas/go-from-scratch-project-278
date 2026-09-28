@@ -2,8 +2,10 @@ package application
 
 import (
 	"context"
+	"testing"
 
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links"
 )
@@ -56,4 +58,16 @@ func (g *fakeShortcodeGen) Generate() string {
 	g.calls++
 
 	return code
+}
+
+func createValidLink(t *testing.T, codeRaw string) links.Link {
+	t.Helper()
+
+	originalURL, err := links.NewURL("https://test.com")
+	require.NoError(t, err)
+
+	code, err := links.NewShortCode(codeRaw)
+	require.NoError(t, err)
+
+	return links.Link{OriginalURL: originalURL, ShortCode: code}
 }
