@@ -14,15 +14,12 @@ func TestCreateLink(t *testing.T) {
 		store := new(fakeLinksStore)
 
 		codeRaw := "test"
-		params := CreateLinkParams{
-			OriginalURL: "https://test.com/test",
-			ShortCode:   &codeRaw,
-		}
 
-		want := links.Link{
-			ID:          1,
-			OriginalURL: links.URL(params.OriginalURL),
-			ShortCode:   links.ShortCode(*params.ShortCode),
+		want := createValidLink(t, codeRaw)
+
+		params := CreateLinkParams{
+			OriginalURL: string(want.OriginalURL),
+			ShortCode:   &codeRaw,
 		}
 
 		store.
@@ -44,14 +41,10 @@ func TestCreateLink(t *testing.T) {
 
 		generatedCode := "generated"
 
-		params := CreateLinkParams{
-			OriginalURL: "https://test.com/test",
-		}
+		want := createValidLink(t, generatedCode)
 
-		want := links.Link{
-			ID:          1,
-			OriginalURL: links.URL(params.OriginalURL),
-			ShortCode:   links.ShortCode(generatedCode),
+		params := CreateLinkParams{
+			OriginalURL: string(want.OriginalURL),
 		}
 
 		store.
@@ -71,14 +64,10 @@ func TestCreateLink(t *testing.T) {
 	t.Run("create without shortcode with retry", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		params := CreateLinkParams{
-			OriginalURL: "https://test.com/test",
-		}
+		want := createValidLink(t, "code-two")
 
-		want := links.Link{
-			ID:          1,
-			OriginalURL: links.URL(params.OriginalURL),
-			ShortCode:   links.ShortCode("code-two"),
+		params := CreateLinkParams{
+			OriginalURL: string(want.OriginalURL),
 		}
 
 		store.
