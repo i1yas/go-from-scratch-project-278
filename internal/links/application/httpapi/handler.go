@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -27,6 +28,8 @@ type LinksHandler struct {
 	s       linkService
 }
 
+var ErrInvalidID = errors.New("invalid id")
+
 // NewLinksHandler creates LinksHandler
 func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
 	return &LinksHandler{s: service, baseURL: baseURL}
@@ -45,7 +48,7 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	for i, link := range linkItems {
 		respItem, err := convertToLinkResponse(link, h.baseURL)
 		if err != nil {
-			ctx.Status(400)
+			handleError(ctx, err)
 			return
 		}
 
@@ -61,10 +64,7 @@ func (h *LinksHandler) GetLinkByID(ctx *gin.Context) {
 
 	id, err := strconv.ParseInt(idRaw, 10, 64)
 	if err != nil {
-		ctx.JSON(400, errorResponse{
-			Message: "id should be number",
-		})
-
+		handleError(ctx, fmt.Errorf("%w: %w", ErrInvalidID, err))
 		return
 	}
 
@@ -105,37 +105,45 @@ func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, er
 }
 
 type errorResponse struct {
-	Message string `json:"message"`
+	Error string `json:"error"`
 }
 
 func handleError(ctx *gin.Context, err error) {
+	if errors.Is(err, ErrInvalidID) {
+		ctx.JSON(http.StatusBadRequest, errorResponse{
+			Error: "invalid id",
+		})
+
+		return
+	}
+
 	if errors.Is(err, application.ErrShortCodeConflict) {
-		ctx.JSON(400, errorResponse{
-			Message: "short name exist",
+		ctx.JSON(http.StatusConflict, errorResponse{
+			Error: "shortname already exist",
 		})
 
 		return
 	}
 
 	if errors.Is(err, application.ErrLinkNotFound) {
-		ctx.JSON(404, errorResponse{
-			Message: "link not found",
+		ctx.JSON(http.StatusNotFound, errorResponse{
+			Error: "link not found",
 		})
 
 		return
 	}
 
 	if errors.Is(err, links.ErrInvlalidShortCode) {
-		ctx.JSON(404, errorResponse{
-			Message: "invalid short name",
+		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
+			Error: "invalid shortname",
 		})
 
 		return
 	}
 
 	if errors.Is(err, links.ErrInvlalidURL) {
-		ctx.JSON(404, errorResponse{
-			Message: "invalid url",
+		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
+			Error: "invalid url",
 		})
 
 		return
