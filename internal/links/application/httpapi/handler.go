@@ -105,49 +105,45 @@ func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, er
 }
 
 type errorResponse struct {
-	Error string `json:"error"`
+	Error  string            `json:"error,omitempty"`
+	Errors map[string]string `json:"errors,omitempty"`
 }
 
 func handleError(ctx *gin.Context, err error) {
-	if errors.Is(err, ErrInvalidID) {
+	var linkErr *links.LinkError
+
+	switch {
+	case errors.Is(err, ErrInvalidID):
 		ctx.JSON(http.StatusBadRequest, errorResponse{
 			Error: "invalid id",
 		})
 
-		return
-	}
-
-	if errors.Is(err, application.ErrShortCodeConflict) {
+	case errors.Is(err, application.ErrShortCodeConflict):
 		ctx.JSON(http.StatusConflict, errorResponse{
 			Error: "shortname already exist",
 		})
 
-		return
-	}
-
-	if errors.Is(err, application.ErrLinkNotFound) {
+	case errors.Is(err, application.ErrLinkNotFound):
 		ctx.JSON(http.StatusNotFound, errorResponse{
 			Error: "link not found",
 		})
 
-		return
-	}
+	case errors.As(err, &linkErr):
+		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
+			Errors: linkErr.Fields,
+		})
 
-	if errors.Is(err, links.ErrInvlalidShortCode) {
+	case errors.Is(err, links.ErrInvlalidShortCode):
 		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
 			Error: "invalid shortname",
 		})
 
-		return
-	}
-
-	if errors.Is(err, links.ErrInvlalidURL) {
+	case errors.Is(err, links.ErrInvlalidURL):
 		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
 			Error: "invalid url",
 		})
 
-		return
+	default:
+		ctx.Status(500)
 	}
-
-	ctx.Status(500)
 }
