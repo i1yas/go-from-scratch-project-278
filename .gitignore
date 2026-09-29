@@ -1,4 +1,5 @@
-bin
+bin/*
+!bin/*.sh
 
 # Binaries for programs and plugins
 *.exe
