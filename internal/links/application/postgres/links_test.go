@@ -308,7 +308,7 @@ func migrationsDir(t *testing.T) string {
 	return filepath.Join(
 		filename,
 		"..", "..", "..", "..", "..",
-		"migrations",
+		"db", "migrations",
 	)
 }
 
