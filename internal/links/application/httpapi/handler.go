@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -40,7 +41,12 @@ func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
 
 // GetLinks handles request for listing links
 func (h *LinksHandler) GetLinks(ctx *gin.Context) {
-	linksRange, err := application.NewRange(0, 5)
+	rangeRaw := ctx.Query("range")
+
+	linksRange, err := parseRange(rangeRaw, application.Range{
+		From: 0,
+		To:   5,
+	})
 	if err != nil {
 		handleError(ctx, err)
 		return
@@ -239,6 +245,11 @@ func handleError(ctx *gin.Context, err error) {
 			Error: "invalid json",
 		})
 
+	case errors.Is(err, application.ErrInvalidRange):
+		ctx.JSON(http.StatusBadRequest, errorResponse{
+			Error: "invalid range",
+		})
+
 	case errors.Is(err, application.ErrShortCodeConflict):
 		ctx.JSON(http.StatusConflict, errorResponse{
 			Error: "shortname already exist",
@@ -267,4 +278,25 @@ func handleError(ctx *gin.Context, err error) {
 	default:
 		ctx.Status(500)
 	}
+}
+
+func parseRange(raw string, defaultRange application.Range) (application.Range, error) {
+	if raw == "" {
+		return defaultRange, nil
+	}
+
+	type rangeShape []int32
+
+	var rangeItems rangeShape
+
+	err := json.Unmarshal([]byte(raw), &rangeItems)
+	if err != nil {
+		return application.Range{}, ErrInvalidJSON
+	}
+
+	if len(rangeItems) < 2 {
+		return defaultRange, nil
+	}
+
+	return application.NewRange(rangeItems[0], rangeItems[1])
 }
