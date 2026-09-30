@@ -55,6 +55,8 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 		result[i] = respItem
 	}
 
+	// TODO: implement properly
+	ctx.Header("Content-Range", fmt.Sprintf("links 0-%d/%d", len(result), len(result)))
 	ctx.JSON(http.StatusOK, result)
 }
 
