@@ -27,10 +27,13 @@ func NewLinksStore(db sqlcgen.DBTX) *LinksStore {
 }
 
 // GetLinks loads links from store
-func (s *LinksStore) GetLinks(ctx context.Context) ([]links.Link, error) {
+func (s *LinksStore) GetLinks(ctx context.Context, params application.GetLinksParams) ([]links.Link, error) {
+	limit := params.Range.To - params.Range.From
+	offset := params.Range.From
+
 	dbResult, err := s.q.GetLinks(ctx, sqlcgen.GetLinksParams{
-		Limit:  10,
-		Offset: 0,
+		Limit:  limit,
+		Offset: offset,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", application.ErrStoreInternal, err)

@@ -15,8 +15,8 @@ type fakeLinksStore struct {
 	mock.Mock
 }
 
-func (s *fakeLinksStore) GetLinks(ctx context.Context) ([]links.Link, error) {
-	args := s.Called(ctx)
+func (s *fakeLinksStore) GetLinks(ctx context.Context, params GetLinksParams) ([]links.Link, error) {
+	args := s.Called(ctx, params)
 	return args.Get(0).([]links.Link), args.Error(1)
 }
 

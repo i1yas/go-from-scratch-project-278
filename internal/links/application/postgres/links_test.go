@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"path/filepath"
 	"runtime"
@@ -61,27 +62,67 @@ func TestCreateAndGetLink(t *testing.T) {
 }
 
 func TestGetMultipleLinks(t *testing.T) {
-	db := setupTestDB(t)
+	cases := []struct {
+		name        string
+		from        int
+		to          int
+		total       int
+		resultCount int
+	}{
+		{
+			name:        "from 0 to 3, total 2",
+			from:        0,
+			to:          3,
+			total:       2,
+			resultCount: 2,
+		},
+		{
+			name:        "from 0 to 3, total 4",
+			from:        0,
+			to:          3,
+			total:       4,
+			resultCount: 3,
+		},
+		{
+			name:        "from 0 to 3, total 0",
+			from:        0,
+			to:          3,
+			total:       0,
+			resultCount: 0,
+		},
+	}
 
-	withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
-		linksStore := NewLinksStore(tx)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := setupTestDB(t)
 
-		link1 := createValidLink(t, "test-1")
-		link2 := createValidLink(t, "test-2")
-		link3 := createValidLink(t, "test-3")
+			withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+				linksStore := NewLinksStore(tx)
 
-		_, err := linksStore.CreateLink(ctx, link1)
-		require.NoError(t, err)
-		_, err = linksStore.CreateLink(ctx, link2)
-		require.NoError(t, err)
-		_, err = linksStore.CreateLink(ctx, link3)
-		require.NoError(t, err)
+				for i := range tc.total {
+					code := fmt.Sprintf("test-%d", i)
+					link := createValidLink(t, code)
 
-		loadedLinks, err := linksStore.GetLinks(ctx)
-		require.NoError(t, err)
-		require.Equal(t, 3, len(loadedLinks))
-	})
+					_, err := linksStore.CreateLink(ctx, link)
+					require.NoError(t, err)
+				}
+
+				linksRange, err := application.NewRange(int32(tc.from), int32(tc.to))
+				require.NoError(t, err)
+
+				loadedLinks, err := linksStore.GetLinks(ctx, application.GetLinksParams{
+					Range: linksRange,
+				})
+				require.NoError(t, err)
+				require.Equal(t, tc.resultCount, len(loadedLinks))
+
+				// TODO: check items after adding sorting
+			})
+		})
+	}
 }
+
+// TODO: test get links total count
 
 func TestUpdateLink(t *testing.T) {
 	db := setupTestDB(t)

@@ -6,6 +6,11 @@ import (
 	"hexleturlshort/internal/links"
 )
 
+// GetLinksParams contains params for get links use-case
+type GetLinksParams struct {
+	Range Range
+}
+
 // LinksResult contains total count and link items
 type LinksResult struct {
 	Total int64
@@ -13,7 +18,7 @@ type LinksResult struct {
 }
 
 // GetLinks is use-case for listing links
-func (s *Service) GetLinks(ctx context.Context) (LinksResult, error) {
+func (s *Service) GetLinks(ctx context.Context, params GetLinksParams) (LinksResult, error) {
 	totalCount, err := s.links.GetLinksTotalCount(ctx)
 	if err != nil {
 		return LinksResult{}, err
@@ -25,7 +30,7 @@ func (s *Service) GetLinks(ctx context.Context) (LinksResult, error) {
 		}, nil
 	}
 
-	items, err := s.links.GetLinks(ctx)
+	items, err := s.links.GetLinks(ctx, params)
 	if err != nil {
 		return LinksResult{}, err
 	}

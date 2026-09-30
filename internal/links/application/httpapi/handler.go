@@ -14,7 +14,7 @@ import (
 )
 
 type linkService interface {
-	GetLinks(ctx context.Context) (application.LinksResult, error)
+	GetLinks(ctx context.Context, params application.GetLinksParams) (application.LinksResult, error)
 	GetLinkByID(ctx context.Context, id int64) (links.Link, error)
 	CreateLink(ctx context.Context, params application.CreateLinkParams) (links.Link, error)
 	UpdateLink(ctx context.Context, params application.UpdateLinkParams) (links.Link, error)
@@ -40,7 +40,15 @@ func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
 
 // GetLinks handles request for listing links
 func (h *LinksHandler) GetLinks(ctx *gin.Context) {
-	linksResult, err := h.s.GetLinks(ctx)
+	linksRange, err := application.NewRange(0, 5)
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
+	linksResult, err := h.s.GetLinks(ctx, application.GetLinksParams{
+		Range: linksRange,
+	})
 	if err != nil {
 		handleError(ctx, err)
 		return
