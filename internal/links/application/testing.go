@@ -51,12 +51,14 @@ type fakeShortcodeGen struct {
 }
 
 func (g *fakeShortcodeGen) Generate() (string, error) {
+	ind := g.calls
+	g.calls++
+
 	if len(g.codes) == 0 {
 		return "", errors.New("failed to generate")
 	}
 
-	code := g.codes[g.calls%len(g.codes)]
-	g.calls++
+	code := g.codes[ind%len(g.codes)]
 
 	return code, nil
 }
