@@ -28,7 +28,10 @@ type LinksHandler struct {
 	s       linkService
 }
 
-var ErrInvalidID = errors.New("invalid id")
+var (
+	ErrInvalidID   = errors.New("invalid id")
+	ErrInvalidJSON = errors.New("invalid json")
+)
 
 // NewLinksHandler creates LinksHandler
 func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
@@ -58,6 +61,33 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	// TODO: implement properly
 	ctx.Header("Content-Range", fmt.Sprintf("links 0-%d/%d", len(result), len(result)))
 	ctx.JSON(http.StatusOK, result)
+}
+
+// CreateLink creates link
+func (h *LinksHandler) CreateLink(ctx *gin.Context) {
+	var request createLinkRequest
+
+	if err := ctx.ShouldBindBodyWithJSON(&request); err != nil {
+		handleError(ctx, ErrInvalidJSON)
+		return
+	}
+
+	link, err := h.s.CreateLink(ctx, application.CreateLinkParams{
+		OriginalURL: request.OriginalURL,
+		ShortCode:   request.ShortName,
+	})
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
+	response, err := convertToLinkResponse(link, h.baseURL)
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
 
 // GetLinkByID handles request for getting link by id
@@ -92,6 +122,11 @@ type linkResponse struct {
 	ShortURL    string `json:"short_url"`
 }
 
+type createLinkRequest struct {
+	OriginalURL string  `json:"original_url"`
+	ShortName   *string `json:"short_name,omitempty"`
+}
+
 func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, error) {
 	shortURL, err := link.ShortURL(baseURL)
 	if err != nil {
@@ -118,6 +153,11 @@ func handleError(ctx *gin.Context, err error) {
 	case errors.Is(err, ErrInvalidID):
 		ctx.JSON(http.StatusBadRequest, errorResponse{
 			Error: "invalid id",
+		})
+
+	case errors.Is(err, ErrInvalidJSON):
+		ctx.JSON(http.StatusBadRequest, errorResponse{
+			Error: "invalid json",
 		})
 
 	case errors.Is(err, application.ErrShortCodeConflict):
