@@ -161,6 +161,22 @@ func (h *LinksHandler) UpdateLink(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
+// DeleteLink deletes link
+func (h *LinksHandler) DeleteLink(ctx *gin.Context) {
+	idRaw := ctx.Param("id")
+
+	id, err := strconv.ParseInt(idRaw, 10, 64)
+	if err != nil {
+		handleError(ctx, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		return
+	}
+
+	if err := h.s.DeleteLink(ctx, id); err != nil {
+		handleError(ctx, err)
+		return
+	}
+}
+
 type linkResponse struct {
 	ID          int64  `json:"id"`
 	OriginalURL string `json:"original_url"`

@@ -16,4 +16,5 @@ func RegisterRoutes(
 	linkByIDAPI := linksAPI.Group("/:id")
 	linkByIDAPI.GET("", links.GetLinkByID)
 	linkByIDAPI.PUT("", links.UpdateLink)
+	linkByIDAPI.DELETE("", links.DeleteLink)
 }
