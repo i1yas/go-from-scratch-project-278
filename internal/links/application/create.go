@@ -16,20 +16,10 @@ type CreateLinkParams struct {
 
 // CreateLink is use-case for creating link entry
 func (s *Service) CreateLink(ctx context.Context, params CreateLinkParams) (links.Link, error) {
-	originalURL, err := links.NewURL(params.OriginalURL)
-	if err != nil {
-		return links.Link{}, err
-	}
-
 	if params.ShortCode != nil {
-		code, err := links.NewShortCode(*params.ShortCode)
+		link, err := links.NewLink(params.OriginalURL, *params.ShortCode)
 		if err != nil {
 			return links.Link{}, err
-		}
-
-		link := links.Link{
-			OriginalURL: originalURL,
-			ShortCode:   code,
 		}
 
 		return s.links.CreateLink(ctx, link)
@@ -38,21 +28,15 @@ func (s *Service) CreateLink(ctx context.Context, params CreateLinkParams) (link
 	const triesCount = 3
 
 	for range triesCount {
-		codeRaw, err := s.shortcodeGen.Generate()
+		generatedCode, err := s.shortcodeGen.Generate()
 		if err != nil {
 			return links.Link{}, fmt.Errorf("%w: %w",
 				ErrFailedToGenerateValidShortCode, err)
 		}
 
-		code, err := links.NewShortCode(codeRaw)
+		link, err := links.NewLink(params.OriginalURL, generatedCode)
 		if err != nil {
-			return links.Link{}, fmt.Errorf("%w: %w",
-				ErrFailedToGenerateValidShortCode, err)
-		}
-
-		link := links.Link{
-			OriginalURL: originalURL,
-			ShortCode:   code,
+			return links.Link{}, err
 		}
 
 		createdLink, err := s.links.CreateLink(ctx, link)

@@ -129,21 +129,12 @@ func (s *LinksStore) DeleteLink(ctx context.Context, id int64) error {
 }
 
 func convertToLink(dbLink sqlcgen.Link) (links.Link, error) {
-	originalURL, err := links.NewURL(dbLink.OriginalUrl)
+	link, err := links.NewLink(dbLink.OriginalUrl, dbLink.Shortcode)
 	if err != nil {
 		return links.Link{}, fmt.Errorf("%w: %w", application.ErrInvalidStoreValue, err)
 	}
 
-	code, err := links.NewShortCode(dbLink.Shortcode)
-	if err != nil {
-		return links.Link{}, fmt.Errorf("%w: %w", application.ErrInvalidStoreValue, err)
-	}
-
-	link := links.Link{
-		ID:          dbLink.ID,
-		OriginalURL: originalURL,
-		ShortCode:   code,
-	}
+	link.ID = dbLink.ID
 
 	return link, nil
 }

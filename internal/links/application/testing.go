@@ -64,11 +64,11 @@ func (g *fakeShortcodeGen) Generate() (string, error) {
 func createValidLink(t *testing.T, codeRaw string) links.Link {
 	t.Helper()
 
-	originalURL, err := links.NewURL("https://test.com")
+	link, err := links.NewLink(
+		"http://test.com",
+		codeRaw,
+	)
 	require.NoError(t, err)
 
-	code, err := links.NewShortCode(codeRaw)
-	require.NoError(t, err)
-
-	return links.Link{OriginalURL: originalURL, ShortCode: code}
+	return link
 }

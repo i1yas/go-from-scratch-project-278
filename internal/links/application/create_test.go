@@ -101,7 +101,9 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
+		var linkErr *links.LinkError
+		require.ErrorAs(t, err, &linkErr)
+		require.Contains(t, linkErr.Fields, "shortcode")
 	})
 
 	t.Run("create with invalid url", func(t *testing.T) {
@@ -118,7 +120,9 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		require.ErrorIs(t, err, links.ErrInvlalidURL)
+		var linkErr *links.LinkError
+		require.ErrorAs(t, err, &linkErr)
+		require.Contains(t, linkErr.Fields, "original_url")
 	})
 
 	t.Run("failed to generate unique shortcode", func(t *testing.T) {
