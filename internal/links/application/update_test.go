@@ -15,7 +15,7 @@ func TestUpdateLink(t *testing.T) {
 	want.ID = 101
 
 	store.
-		On("UpdateLink", mock.Anything, mock.Anything).
+		On("UpdateLink", mock.Anything, want).
 		Return(want, nil)
 
 	svc := NewService(store, &fakeShortcodeGen{})
