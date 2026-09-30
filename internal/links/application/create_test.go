@@ -33,8 +33,8 @@ func TestCreateLink(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, want, got)
-		require.Equal(t, len(store.Calls), 1)
-		require.Equal(t, generator.calls, 0)
+		require.Equal(t, 1, len(store.Calls))
+		require.Equal(t, 0, generator.calls)
 	})
 
 	t.Run("create without shortcode", func(t *testing.T) {
@@ -59,8 +59,8 @@ func TestCreateLink(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, want, got)
-		require.Equal(t, len(store.Calls), 1)
-		require.Equal(t, generator.calls, 1)
+		require.Equal(t, 1, len(store.Calls))
+		require.Equal(t, 1, generator.calls)
 	})
 
 	t.Run("create without shortcode with retry", func(t *testing.T) {
@@ -94,8 +94,8 @@ func TestCreateLink(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, want, got)
-		require.Equal(t, len(store.Calls), 2)
-		require.Equal(t, generator.calls, 2)
+		require.Equal(t, 2, len(store.Calls))
+		require.Equal(t, 2, generator.calls)
 	})
 
 	t.Run("create with invalid shortcode", func(t *testing.T) {
@@ -115,7 +115,7 @@ func TestCreateLink(t *testing.T) {
 		var linkErr *links.LinkError
 		require.ErrorAs(t, err, &linkErr)
 		require.Contains(t, linkErr.Fields, "shortcode")
-		require.Equal(t, len(store.Calls), 0)
+		require.Equal(t, 0, len(store.Calls))
 	})
 
 	t.Run("create with invalid url", func(t *testing.T) {
