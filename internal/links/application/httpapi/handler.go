@@ -63,6 +63,11 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
+type createLinkRequest struct {
+	OriginalURL string  `json:"original_url"`
+	ShortName   *string `json:"short_name,omitempty"`
+}
+
 // CreateLink creates link
 func (h *LinksHandler) CreateLink(ctx *gin.Context) {
 	var request createLinkRequest
@@ -115,6 +120,11 @@ func (h *LinksHandler) GetLinkByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
+type updateLinkRequest struct {
+	OriginalURL string `json:"original_url"`
+	ShortName   string `json:"short_name"`
+}
+
 // UpdateLink updates link
 func (h *LinksHandler) UpdateLink(ctx *gin.Context) {
 	idRaw := ctx.Param("id")
@@ -156,16 +166,6 @@ type linkResponse struct {
 	OriginalURL string `json:"original_url"`
 	ShortName   string `json:"short_name"`
 	ShortURL    string `json:"short_url"`
-}
-
-type createLinkRequest struct {
-	OriginalURL string  `json:"original_url"`
-	ShortName   *string `json:"short_name,omitempty"`
-}
-
-type updateLinkRequest struct {
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
 }
 
 func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, error) {
