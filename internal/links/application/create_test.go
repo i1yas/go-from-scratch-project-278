@@ -135,7 +135,24 @@ func TestCreateLink(t *testing.T) {
 		var linkErr *links.LinkError
 		require.ErrorAs(t, err, &linkErr)
 		require.Contains(t, linkErr.Fields, "original_url")
-		require.Equal(t, len(store.Calls), 0)
+		require.Equal(t, 0, len(store.Calls))
+	})
+
+	t.Run("failed to generate valid shortcode", func(t *testing.T) {
+		store := new(fakeLinksStore)
+
+		params := CreateLinkParams{
+			OriginalURL: "https://test.com/test",
+		}
+
+		generator := &fakeShortcodeGen{}
+		svc := NewService(store, generator)
+
+		_, err := svc.CreateLink(t.Context(), params)
+
+		require.ErrorIs(t, err, ErrFailedToGenerateValidShortCode)
+		require.Equal(t, 0, len(store.Calls))
+		require.Equal(t, 1, generator.calls)
 	})
 
 	t.Run("failed to generate unique shortcode", func(t *testing.T) {
@@ -158,5 +175,28 @@ func TestCreateLink(t *testing.T) {
 		require.Greater(t, len(store.Calls), 2)
 		require.Greater(t, generator.calls, 2)
 		require.Equal(t, len(store.Calls), generator.calls)
+	})
+
+	t.Run("generated shortcode is invalid", func(t *testing.T) {
+		store := new(fakeLinksStore)
+
+		params := CreateLinkParams{
+			OriginalURL: "https://test.com/test",
+		}
+
+		store.
+			On("CreateLink", mock.Anything, mock.Anything).
+			Return(links.Link{}, ErrShortCodeConflict)
+
+		generator := &fakeShortcodeGen{codes: []string{""}}
+		svc := NewService(store, generator)
+
+		_, err := svc.CreateLink(t.Context(), params)
+
+		var linkErr *links.LinkError
+		require.ErrorAs(t, err, &linkErr)
+		require.Contains(t, linkErr.Fields, "shortcode")
+		require.Equal(t, len(store.Calls), 0)
+		require.Equal(t, generator.calls, 1)
 	})
 }
