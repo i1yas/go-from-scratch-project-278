@@ -8,17 +8,35 @@ import (
 )
 
 func TestDeleteLink(t *testing.T) {
-	store := new(fakeLinksStore)
+	t.Run("delete existing link", func(t *testing.T) {
+		store := new(fakeLinksStore)
 
-	store.
-		On("DeleteLink", mock.Anything, mock.Anything).
-		Return(nil)
+		id := int64(101)
 
-	svc := NewService(store, &fakeShortcodeGen{})
+		store.
+			On("DeleteLink", mock.Anything, id).
+			Return(nil)
 
-	err := svc.DeleteLink(t.Context(), 101)
+		svc := NewService(store, &fakeShortcodeGen{})
 
-	require.NoError(t, err)
+		err := svc.DeleteLink(t.Context(), id)
+
+		require.NoError(t, err)
+		require.Equal(t, 1, len(store.Calls))
+	})
+
+	t.Run("error link not found", func(t *testing.T) {
+		store := new(fakeLinksStore)
+
+		store.
+			On("DeleteLink", mock.Anything, mock.Anything).
+			Return(ErrLinkNotFound)
+
+		svc := NewService(store, &fakeShortcodeGen{})
+
+		err := svc.DeleteLink(t.Context(), 101)
+
+		require.ErrorIs(t, err, ErrLinkNotFound)
+		require.Equal(t, 1, len(store.Calls))
+	})
 }
-
-// TODO: test other cases
