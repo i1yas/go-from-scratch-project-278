@@ -41,9 +41,7 @@ func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
 
 // GetLinks handles request for listing links
 func (h *LinksHandler) GetLinks(ctx *gin.Context) {
-	rangeRaw := ctx.Query("range")
-
-	linksRange, err := parseRange(rangeRaw, application.Range{
+	linksRange, err := parseRange(ctx.Query("range"), application.Range{
 		From: 0,
 		To:   5,
 	})
@@ -52,8 +50,22 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 		return
 	}
 
+	// TODO: sort should be optional here, store should choose default one
+	fallbackSort, err := application.NewSortOrder("id", application.OrderASC)
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
+	sort, err := parseSort(ctx.Query("sort"), fallbackSort)
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
 	linksResult, err := h.s.GetLinks(ctx, application.GetLinksParams{
 		Range: linksRange,
+		Sort:  sort,
 	})
 	if err != nil {
 		handleError(ctx, err)
@@ -250,6 +262,16 @@ func handleError(ctx *gin.Context, err error) {
 			Error: "invalid range",
 		})
 
+	case errors.Is(err, application.ErrInvalidSortOrder):
+		ctx.JSON(http.StatusBadRequest, errorResponse{
+			Error: "invalid sort order",
+		})
+
+	case errors.Is(err, application.ErrUnsupportedSortOrder):
+		ctx.JSON(http.StatusBadRequest, errorResponse{
+			Error: "invalid sort order",
+		})
+
 	case errors.Is(err, application.ErrShortCodeConflict):
 		ctx.JSON(http.StatusConflict, errorResponse{
 			Error: "shortname already exist",
@@ -299,4 +321,25 @@ func parseRange(raw string, defaultRange application.Range) (application.Range, 
 	}
 
 	return application.NewRange(rangeItems[0], rangeItems[1])
+}
+
+func parseSort(raw string, defaultSort application.SortOrder) (application.SortOrder, error) {
+	if raw == "" {
+		return defaultSort, nil
+	}
+
+	type sortShape []string
+
+	var sortItems sortShape
+
+	err := json.Unmarshal([]byte(raw), &sortItems)
+	if err != nil {
+		return application.SortOrder{}, ErrInvalidJSON
+	}
+
+	if len(sortItems) < 2 {
+		return defaultSort, nil
+	}
+
+	return application.NewSortOrder(sortItems[0], sortItems[1])
 }

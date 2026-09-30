@@ -31,6 +31,8 @@ func (s *Service) GetLinks(ctx context.Context, params GetLinksParams) (LinksRes
 		}, nil
 	}
 
+	mapLinksSortToStore(&params.Sort)
+
 	items, err := s.links.GetLinks(ctx, params)
 	if err != nil {
 		return LinksResult{}, err
@@ -45,4 +47,15 @@ func (s *Service) GetLinks(ctx context.Context, params GetLinksParams) (LinksRes
 // GetLinkByID is use-case for loading link by id
 func (s *Service) GetLinkByID(ctx context.Context, id int64) (links.Link, error) {
 	return s.links.GetLinkByID(ctx, id)
+}
+
+func mapLinksSortToStore(sort *SortOrder) {
+	if sort == nil {
+		return
+	}
+
+	switch sort.sortBy {
+	case "short_url", "short_name":
+		sort.sortBy = "shortcode"
+	}
 }
