@@ -239,67 +239,79 @@ func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, er
 }
 
 type errorResponse struct {
-	Error  string            `json:"error,omitempty"`
-	Errors map[string]string `json:"errors,omitempty"`
+	status      int
+	originalErr error
+	Error       string            `json:"error,omitempty"`
+	Errors      map[string]string `json:"errors,omitempty"`
+}
+
+var errorsMappings = []errorResponse{
+	{
+		originalErr: ErrInvalidID,
+		status:      http.StatusBadRequest,
+		Error:       "invalid id",
+	},
+	{
+		originalErr: ErrInvalidJSON,
+		status:      http.StatusBadRequest,
+		Error:       "invalid json",
+	},
+	{
+		originalErr: application.ErrInvalidRange,
+		status:      http.StatusBadRequest,
+		Error:       "invalid range",
+	},
+	{
+		originalErr: application.ErrInvalidSortOrder,
+		status:      http.StatusBadRequest,
+		Error:       "invalid sort order",
+	},
+	{
+		originalErr: application.ErrUnsupportedSortOrder,
+		status:      http.StatusBadRequest,
+		Error:       "invalid sort order",
+	},
+	{
+		originalErr: application.ErrShortCodeConflict,
+		status:      http.StatusConflict,
+		Error:       "shortname already exist",
+	},
+	{
+		originalErr: application.ErrLinkNotFound,
+		status:      http.StatusNotFound,
+		Error:       "link not found",
+	},
+	{
+		originalErr: links.ErrInvlalidShortCode,
+		status:      http.StatusUnprocessableEntity,
+		Error:       "invalid shortname",
+	},
+	{
+		originalErr: links.ErrInvlalidURL,
+		status:      http.StatusUnprocessableEntity,
+		Error:       "invalid url",
+	},
 }
 
 func handleError(ctx *gin.Context, err error) {
+	for _, mappedErr := range errorsMappings {
+		if errors.Is(err, mappedErr.originalErr) {
+			ctx.JSON(mappedErr.status, mappedErr)
+
+			return
+		}
+	}
+
 	var linkErr *links.LinkError
-
-	switch {
-	case errors.Is(err, ErrInvalidID):
-		ctx.JSON(http.StatusBadRequest, errorResponse{
-			Error: "invalid id",
-		})
-
-	case errors.Is(err, ErrInvalidJSON):
-		ctx.JSON(http.StatusBadRequest, errorResponse{
-			Error: "invalid json",
-		})
-
-	case errors.Is(err, application.ErrInvalidRange):
-		ctx.JSON(http.StatusBadRequest, errorResponse{
-			Error: "invalid range",
-		})
-
-	case errors.Is(err, application.ErrInvalidSortOrder):
-		ctx.JSON(http.StatusBadRequest, errorResponse{
-			Error: "invalid sort order",
-		})
-
-	case errors.Is(err, application.ErrUnsupportedSortOrder):
-		ctx.JSON(http.StatusBadRequest, errorResponse{
-			Error: "invalid sort order",
-		})
-
-	case errors.Is(err, application.ErrShortCodeConflict):
-		ctx.JSON(http.StatusConflict, errorResponse{
-			Error: "shortname already exist",
-		})
-
-	case errors.Is(err, application.ErrLinkNotFound):
-		ctx.JSON(http.StatusNotFound, errorResponse{
-			Error: "link not found",
-		})
-
-	case errors.As(err, &linkErr):
+	if errors.As(err, &linkErr) {
 		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
 			Errors: linkErr.Fields,
 		})
 
-	case errors.Is(err, links.ErrInvlalidShortCode):
-		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
-			Error: "invalid shortname",
-		})
-
-	case errors.Is(err, links.ErrInvlalidURL):
-		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
-			Error: "invalid url",
-		})
-
-	default:
-		ctx.Status(500)
+		return
 	}
+
+	ctx.Status(500)
 }
 
 func parseRange(raw string, defaultRange application.Range) (application.Range, error) {
