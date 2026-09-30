@@ -11,7 +11,13 @@ format:
 	golangci-lint fmt
 	
 test:
-	go test -race ./...
+	go test -race -coverpkg=./...  -coverprofile=coverage.out ./...
+
+coverage: test
+	go tool cover -func=coverage.out
+
+coverage-html: test
+	go tool cover -html=coverage.out
 
 app_up:
 	docker compose --profile full up -d
@@ -36,7 +42,8 @@ db_migrate:
 sqlc_generate:
 	go tool sqlc generate
 
-.PHONY: build lint lint-fix format test \
+.PHONY: build lint lint-fix format \
+	test coverage coverage-html \
 	app_up app_down \
 	db_up db_down db_connect db_migrate \
 	sqlc_generate
