@@ -1,9 +1,3 @@
--- name: GetLinks :many
-SELECT
-    id, original_url, shortcode
-FROM links
-LIMIT $1 OFFSET $2;
-
 -- name: GetLinksTotalCount :one
 SELECT count(*) as total
 FROM links;

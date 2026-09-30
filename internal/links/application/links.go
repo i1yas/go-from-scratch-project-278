@@ -9,6 +9,7 @@ import (
 // GetLinksParams contains params for get links use-case
 type GetLinksParams struct {
 	Range Range
+	Sort  SortOrder
 }
 
 // LinksResult contains total count and link items

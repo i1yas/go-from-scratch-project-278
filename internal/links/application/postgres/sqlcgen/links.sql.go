@@ -69,41 +69,6 @@ func (q *Queries) GetLinkByID(ctx context.Context, id int64) (Link, error) {
 	return i, err
 }
 
-const getLinks = `-- name: GetLinks :many
-SELECT
-    id, original_url, shortcode
-FROM links
-LIMIT $1 OFFSET $2
-`
-
-type GetLinksParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
-}
-
-func (q *Queries) GetLinks(ctx context.Context, arg GetLinksParams) ([]Link, error) {
-	rows, err := q.db.QueryContext(ctx, getLinks, arg.Limit, arg.Offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Link
-	for rows.Next() {
-		var i Link
-		if err := rows.Scan(&i.ID, &i.OriginalUrl, &i.Shortcode); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getLinksTotalCount = `-- name: GetLinksTotalCount :one
 SELECT count(*) as total
 FROM links

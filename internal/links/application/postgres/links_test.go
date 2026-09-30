@@ -61,7 +61,7 @@ func TestCreateAndGetLink(t *testing.T) {
 	}
 }
 
-func TestGetMultipleLinks(t *testing.T) {
+func TestGetLinksPagination(t *testing.T) {
 	cases := []struct {
 		name        string
 		from        int
@@ -99,27 +99,208 @@ func TestGetMultipleLinks(t *testing.T) {
 			withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 				linksStore := NewLinksStore(tx)
 
+				var linkItems []links.Link
+
 				for i := range tc.total {
 					code := fmt.Sprintf("test-%d", i)
 					link := createValidLink(t, code)
+
+					linkItems = append(linkItems, link)
 
 					_, err := linksStore.CreateLink(ctx, link)
 					require.NoError(t, err)
 				}
 
+				want := linkItems[0:tc.resultCount]
+
 				linksRange, err := application.NewRange(int32(tc.from), int32(tc.to))
+				require.NoError(t, err)
+
+				sort, err := application.NewSortOrder("id", "ASC")
 				require.NoError(t, err)
 
 				loadedLinks, err := linksStore.GetLinks(ctx, application.GetLinksParams{
 					Range: linksRange,
+					Sort:  sort,
 				})
+
 				require.NoError(t, err)
 				require.Equal(t, tc.resultCount, len(loadedLinks))
-
-				// TODO: check items after adding sorting
+				require.Equal(t, linksCodes(want), linksCodes(loadedLinks))
 			})
 		})
 	}
+}
+
+func TestGetLinksSorting(t *testing.T) {
+	linksParams := []struct {
+		originalURL string
+		shortcode   string
+	}{
+		{
+			originalURL: "http://domain-1.com",
+			shortcode:   "link-2-n1",
+		},
+		{
+			originalURL: "http://domain-3.com",
+			shortcode:   "link-1-n2",
+		},
+		{
+			originalURL: "http://domain-2.com",
+			shortcode:   "link-3-n3",
+		},
+	}
+
+	cases := []struct {
+		name         string
+		sortBy       string
+		order        string
+		wantIndOrder []int
+	}{
+		{
+			name:         "id ASC",
+			sortBy:       "id",
+			order:        application.OrderASC,
+			wantIndOrder: []int{0, 1, 2},
+		},
+		{
+			name:         "id DESC",
+			sortBy:       "id",
+			order:        application.OrderDESC,
+			wantIndOrder: []int{2, 1, 0},
+		},
+		{
+			name:         "shortcode ASC",
+			sortBy:       "shortcode",
+			order:        application.OrderASC,
+			wantIndOrder: []int{1, 0, 2},
+		},
+		{
+			name:         "shortcode DESC",
+			sortBy:       "shortcode",
+			order:        application.OrderDESC,
+			wantIndOrder: []int{2, 0, 1},
+		},
+		{
+			name:         "original_url ASC",
+			sortBy:       "original_url",
+			order:        application.OrderASC,
+			wantIndOrder: []int{0, 2, 1},
+		},
+		{
+			name:         "original_url DESC",
+			sortBy:       "original_url",
+			order:        application.OrderDESC,
+			wantIndOrder: []int{1, 2, 0},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := setupTestDB(t)
+
+			withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+				linksStore := NewLinksStore(tx)
+
+				var linkItems []links.Link
+
+				for _, linkParams := range linksParams {
+					link, err := links.NewLink(linkParams.originalURL, linkParams.shortcode)
+					require.NoError(t, err)
+
+					linkItems = append(linkItems, link)
+
+					_, err = linksStore.CreateLink(ctx, link)
+					require.NoError(t, err)
+				}
+
+				linksRange, err := application.NewRange(0, 5)
+				require.NoError(t, err)
+
+				sort, err := application.NewSortOrder(tc.sortBy, string(tc.order))
+				require.NoError(t, err)
+
+				want := make([]links.Link, len(linkItems))
+				for i, k := range tc.wantIndOrder {
+					want[i] = linkItems[k]
+				}
+
+				got, err := linksStore.GetLinks(ctx, application.GetLinksParams{
+					Range: linksRange,
+					Sort:  sort,
+				})
+
+				require.NoError(t, err)
+				require.Equal(t, linksCodes(want), linksCodes(got))
+			})
+		})
+	}
+}
+
+func TestGetLinksErrors(t *testing.T) {
+	validRange, err := application.NewRange(0, 5)
+	require.NoError(t, err)
+
+	validSort, err := application.NewSortOrder("id", application.OrderASC)
+	require.NoError(t, err)
+
+	t.Run("unsupported sort column", func(t *testing.T) {
+		db := setupTestDB(t)
+
+		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+			linksStore := NewLinksStore(tx)
+
+			sortOrder, err := application.NewSortOrder("does_not_exist", application.OrderASC)
+			require.NoError(t, err)
+
+			_, err = linksStore.GetLinks(ctx, application.GetLinksParams{
+				Range: validRange,
+				Sort:  sortOrder,
+			})
+
+			require.ErrorIs(t, err, application.ErrUnsupportedSortOrder)
+		})
+	})
+
+	t.Run("internal store error", func(t *testing.T) {
+		db := setupTestDB(t)
+
+		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+			linksStore := NewLinksStore(tx)
+
+			err := tx.Rollback()
+			require.NoError(t, err)
+
+			_, err = linksStore.GetLinks(ctx, application.GetLinksParams{
+				Range: validRange,
+				Sort:  validSort,
+			})
+
+			require.ErrorIs(t, err, application.ErrStoreInternal)
+		})
+	})
+
+	t.Run("invalid store value", func(t *testing.T) {
+		db := setupTestDB(t)
+
+		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+			linksStore := NewLinksStore(tx)
+
+			// NOTE: bypass store to write invalid value
+			_, err := linksStore.q.CreateLink(ctx, sqlcgen.CreateLinkParams{
+				OriginalUrl: "noturl",
+				Shortcode:   "test",
+			})
+			require.NoError(t, err)
+
+			_, err = linksStore.GetLinks(ctx, application.GetLinksParams{
+				Range: validRange,
+				Sort:  validSort,
+			})
+
+			require.ErrorIs(t, err, application.ErrInvalidStoreValue)
+		})
+	})
 }
 
 // TODO: test get links total count
@@ -383,4 +564,14 @@ func createValidLink(t *testing.T, codeRaw string) links.Link {
 	require.NoError(t, err)
 
 	return links.Link{OriginalURL: originalURL, ShortCode: code}
+}
+
+func linksCodes(linkItems []links.Link) []links.ShortCode {
+	codes := make([]links.ShortCode, len(linkItems))
+
+	for i, link := range linkItems {
+		codes[i] = link.ShortCode
+	}
+
+	return codes
 }

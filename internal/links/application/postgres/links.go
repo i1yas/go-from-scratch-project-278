@@ -17,40 +17,76 @@ const constraintUniqueShortCode = "unique_shortcode"
 
 // LinksStore is postgres adapter for links store
 type LinksStore struct {
-	q sqlcgen.Querier
+	q  sqlcgen.Querier
+	db sqlcgen.DBTX
 }
 
 // NewLinksStore creates LinksStore
 func NewLinksStore(db sqlcgen.DBTX) *LinksStore {
 	querier := sqlcgen.New(db)
-	return &LinksStore{q: querier}
+	return &LinksStore{q: querier, db: db}
+}
+
+var getLinksSupportedSort = map[string]struct{}{
+	"id ASC":            {},
+	"id DESC":           {},
+	"original_url ASC":  {},
+	"original_url DESC": {},
+	"shortcode ASC":     {},
+	"shortcode DESC":    {},
 }
 
 // GetLinks loads links from store
 func (s *LinksStore) GetLinks(ctx context.Context, params application.GetLinksParams) ([]links.Link, error) {
+	sortOrder := params.Sort.String()
+
+	_, ok := getLinksSupportedSort[sortOrder]
+	if !ok {
+		return nil, application.ErrUnsupportedSortOrder
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, original_url, shortcode
+		FROM links
+		ORDER BY %s
+		LIMIT $1 OFFSET $2;
+	`, sortOrder)
+
 	limit := params.Range.To - params.Range.From
 	offset := params.Range.From
 
-	dbResult, err := s.q.GetLinks(ctx, sqlcgen.GetLinksParams{
-		Limit:  limit,
-		Offset: offset,
-	})
+	rows, err := s.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", application.ErrStoreInternal, err)
 	}
 
-	result := make([]links.Link, len(dbResult))
+	defer rows.Close() //nolint:errcheck // Close error is checked via rows.Err()
 
-	for i, dbLink := range dbResult {
-		link, err := convertToLink(dbLink)
-		if err != nil {
-			return nil, err
+	var items []links.Link
+
+	for rows.Next() {
+		var i sqlcgen.Link
+		if err := rows.Scan(&i.ID, &i.OriginalUrl, &i.Shortcode); err != nil {
+			return nil, fmt.Errorf("%w: %w", application.ErrStoreInternal, err)
 		}
 
-		result[i] = link
+		link, err := convertToLink(i)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", application.ErrInvalidStoreValue, err)
+		}
+
+		items = append(items, link)
 	}
 
-	return result, nil
+	if err := rows.Close(); err != nil {
+		return nil, fmt.Errorf("%w: %w", application.ErrStoreInternal, err)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %w", application.ErrStoreInternal, err)
+	}
+
+	return items, nil
 }
 
 // GetLinksTotalCount returns total count of links
