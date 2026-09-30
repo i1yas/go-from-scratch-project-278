@@ -73,10 +73,16 @@ const getLinks = `-- name: GetLinks :many
 SELECT
     id, original_url, shortcode
 FROM links
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) GetLinks(ctx context.Context) ([]Link, error) {
-	rows, err := q.db.QueryContext(ctx, getLinks)
+type GetLinksParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) GetLinks(ctx context.Context, arg GetLinksParams) ([]Link, error) {
+	rows, err := q.db.QueryContext(ctx, getLinks, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
