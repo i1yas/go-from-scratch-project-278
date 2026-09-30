@@ -13,5 +13,7 @@ func RegisterRoutes(
 	linksAPI.GET("", links.GetLinks)
 	linksAPI.POST("", links.CreateLink)
 
-	linksAPI.GET("/:id", links.GetLinkByID)
+	linkByIDAPI := linksAPI.Group("/:id")
+	linkByIDAPI.GET("", links.GetLinkByID)
+	linkByIDAPI.PUT("", links.UpdateLink)
 }

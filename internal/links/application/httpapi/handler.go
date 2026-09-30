@@ -115,6 +115,42 @@ func (h *LinksHandler) GetLinkByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
+// UpdateLink updates link
+func (h *LinksHandler) UpdateLink(ctx *gin.Context) {
+	idRaw := ctx.Param("id")
+
+	id, err := strconv.ParseInt(idRaw, 10, 64)
+	if err != nil {
+		handleError(ctx, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		return
+	}
+
+	var request updateLinkRequest
+
+	if err := ctx.ShouldBindBodyWithJSON(&request); err != nil {
+		handleError(ctx, ErrInvalidJSON)
+		return
+	}
+
+	link, err := h.s.UpdateLink(ctx, application.UpdateLinkParams{
+		ID:          id,
+		OriginalURL: request.OriginalURL,
+		ShortCode:   request.ShortName,
+	})
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
+	response, err := convertToLinkResponse(link, h.baseURL)
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, response)
+}
+
 type linkResponse struct {
 	ID          int64  `json:"id"`
 	OriginalURL string `json:"original_url"`
@@ -125,6 +161,11 @@ type linkResponse struct {
 type createLinkRequest struct {
 	OriginalURL string  `json:"original_url"`
 	ShortName   *string `json:"short_name,omitempty"`
+}
+
+type updateLinkRequest struct {
+	OriginalURL string `json:"original_url"`
+	ShortName   string `json:"short_name"`
 }
 
 func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, error) {
