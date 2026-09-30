@@ -20,6 +20,11 @@ func (s *fakeLinksStore) GetLinks(ctx context.Context) ([]links.Link, error) {
 	return args.Get(0).([]links.Link), args.Error(1)
 }
 
+func (s *fakeLinksStore) GetLinksTotalCount(ctx context.Context) (int64, error) {
+	args := s.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func (s *fakeLinksStore) GetLinkByID(ctx context.Context, id int64) (links.Link, error) {
 	args := s.Called(ctx, id)
 	return args.Get(0).(links.Link), args.Error(1)

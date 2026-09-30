@@ -47,6 +47,16 @@ func (s *LinksStore) GetLinks(ctx context.Context) ([]links.Link, error) {
 	return result, nil
 }
 
+// GetLinksTotalCount returns total count of links
+func (s *LinksStore) GetLinksTotalCount(ctx context.Context) (int64, error) {
+	totalCount, err := s.q.GetLinksTotalCount(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %w", application.ErrStoreInternal, err)
+	}
+
+	return totalCount, nil
+}
+
 // GetLinkByID loads link from store by id
 func (s *LinksStore) GetLinkByID(ctx context.Context, id int64) (links.Link, error) {
 	dbLink, err := s.q.GetLinkByID(ctx, id)

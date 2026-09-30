@@ -3,6 +3,10 @@ SELECT
     id, original_url, shortcode
 FROM links;
 
+-- name: GetLinksTotalCount :one
+SELECT count(*) as total
+FROM links;
+
 -- name: GetLinkByID :one
 SELECT
     id, original_url, shortcode

@@ -1,11 +1,12 @@
 package application
 
 import (
-	"hexleturlshort/internal/links"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"hexleturlshort/internal/links"
 )
 
 func TestResolveLink(t *testing.T) {

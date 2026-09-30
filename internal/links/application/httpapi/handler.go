@@ -14,7 +14,7 @@ import (
 )
 
 type linkService interface {
-	GetLinks(ctx context.Context) ([]links.Link, error)
+	GetLinks(ctx context.Context) (application.LinksResult, error)
 	GetLinkByID(ctx context.Context, id int64) (links.Link, error)
 	CreateLink(ctx context.Context, params application.CreateLinkParams) (links.Link, error)
 	UpdateLink(ctx context.Context, params application.UpdateLinkParams) (links.Link, error)
@@ -40,12 +40,13 @@ func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
 
 // GetLinks handles request for listing links
 func (h *LinksHandler) GetLinks(ctx *gin.Context) {
-	linkItems, err := h.s.GetLinks(ctx)
+	linksResult, err := h.s.GetLinks(ctx)
 	if err != nil {
 		handleError(ctx, err)
 		return
 	}
 
+	linkItems := linksResult.Items
 	result := make([]linkResponse, len(linkItems))
 
 	for i, link := range linkItems {
@@ -59,7 +60,7 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	}
 
 	// TODO: implement properly
-	ctx.Header("Content-Range", fmt.Sprintf("links 0-%d/%d", len(result), len(result)))
+	ctx.Header("Content-Range", fmt.Sprintf("links 0-%d/%d", len(result), linksResult.Total))
 	ctx.JSON(http.StatusOK, result)
 }
 

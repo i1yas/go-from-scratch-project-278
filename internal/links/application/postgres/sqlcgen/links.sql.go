@@ -98,6 +98,18 @@ func (q *Queries) GetLinks(ctx context.Context) ([]Link, error) {
 	return items, nil
 }
 
+const getLinksTotalCount = `-- name: GetLinksTotalCount :one
+SELECT count(*) as total
+FROM links
+`
+
+func (q *Queries) GetLinksTotalCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getLinksTotalCount)
+	var total int64
+	err := row.Scan(&total)
+	return total, err
+}
+
 const updateLink = `-- name: UpdateLink :one
 UPDATE links
 SET

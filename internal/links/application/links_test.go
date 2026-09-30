@@ -15,11 +15,14 @@ func TestGetLinks(t *testing.T) {
 
 		link := createValidLink(t, "test")
 
+		totalCount := int64(1)
 		linkItems := []links.Link{link}
 
 		store.
 			On("GetLinks", mock.Anything).
-			Return(linkItems, nil)
+			Return(linkItems, nil).
+			On("GetLinksTotalCount", mock.Anything).
+			Return(totalCount, nil)
 
 		generator := &fakeShortcodeGen{}
 		svc := NewService(store, generator)
@@ -27,18 +30,17 @@ func TestGetLinks(t *testing.T) {
 		got, err := svc.GetLinks(t.Context())
 
 		require.NoError(t, err)
-		require.Equal(t, len(linkItems), len(got))
-		require.Equal(t, linkItems, got)
+		require.Equal(t, totalCount, got.Total)
+		require.Equal(t, len(linkItems), len(got.Items))
+		require.Equal(t, linkItems, got.Items)
 	})
 
 	t.Run("no links", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		want := []links.Link{}
-
 		store.
-			On("GetLinks", mock.Anything).
-			Return([]links.Link{}, nil)
+			On("GetLinksTotalCount", mock.Anything).
+			Return(int64(0), nil)
 
 		generator := &fakeShortcodeGen{}
 		svc := NewService(store, generator)
@@ -46,8 +48,8 @@ func TestGetLinks(t *testing.T) {
 		got, err := svc.GetLinks(t.Context())
 
 		require.NoError(t, err)
-		require.Equal(t, len(want), len(got))
-		require.Equal(t, want, got)
+		require.Equal(t, int64(0), got.Total)
+		require.Equal(t, 0, len(got.Items))
 	})
 }
 

@@ -14,6 +14,7 @@ type Querier interface {
 	GetLinkByCode(ctx context.Context, shortcode string) (Link, error)
 	GetLinkByID(ctx context.Context, id int64) (Link, error)
 	GetLinks(ctx context.Context) ([]Link, error)
+	GetLinksTotalCount(ctx context.Context) (int64, error)
 	UpdateLink(ctx context.Context, arg UpdateLinkParams) (Link, error)
 }
 
