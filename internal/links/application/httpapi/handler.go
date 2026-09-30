@@ -177,6 +177,19 @@ func (h *LinksHandler) DeleteLink(ctx *gin.Context) {
 	}
 }
 
+// ResolveLink finds link by code and redirects to original url
+func (h *LinksHandler) ResolveLink(ctx *gin.Context) {
+	code := ctx.Param("code")
+
+	originalURL, err := h.s.ResolveLink(ctx, code)
+	if err != nil {
+		handleError(ctx, err)
+		return
+	}
+
+	ctx.Redirect(http.StatusFound, string(originalURL))
+}
+
 type linkResponse struct {
 	ID          int64  `json:"id"`
 	OriginalURL string `json:"original_url"`

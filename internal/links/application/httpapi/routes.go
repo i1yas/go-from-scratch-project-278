@@ -17,4 +17,6 @@ func RegisterRoutes(
 	linkByIDAPI.GET("", links.GetLinkByID)
 	linkByIDAPI.PUT("", links.UpdateLink)
 	linkByIDAPI.DELETE("", links.DeleteLink)
+
+	router.GET("/r/:code", links.ResolveLink)
 }
