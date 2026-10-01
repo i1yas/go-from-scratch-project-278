@@ -1,15 +1,16 @@
+BINARY := bin/urlshort
+GOOSE := go tool goose -dir ./db/migrations postgres "${DATABASE_URL}"
+
 build:
-	go build -o bin/urlshort ./cmd/api/main.go
+	go build -o $(BINARY) ./cmd/api/main.go
 
-setup-dev-frontend:
-	npm install --prefix ./frontend
+run:
+	go run cmd/api/main.go
+	
+clean:
+	rm $(BINARY) coverage.out
 
-dev-with-frontend:
-	node frontend/index.js
-
-dev-only-frontend:
-	npm exec --prefix ./frontend start-hexlet-url-shortener-frontend
-
+##@ Quality check
 lint:
 	golangci-lint run
 
@@ -27,40 +28,53 @@ coverage: test
 
 coverage-html: test
 	go tool cover -html=coverage.out
+	
+##@ Frontend
+frontend-setup:
+	npm install --prefix ./frontend
 
-app_up:
+dev:
+	node frontend/index.js
+
+dev-frontend:
+	npm exec --prefix ./frontend start-hexlet-url-shortener-frontend
+
+##@ Docker app
+up:
 	docker compose --profile full up -d
 
-app_down:
+down:
 	docker compose --profile full down
 
-db_up:
+##@ Database
+db-up:
 	docker compose up db -d
 
-db_down:
+db-down:
 	docker compose down db
 
-db_remove:
+db-remove:
 	docker compose down db -v
 
-db_connect:
+db-shell:
 	docker compose exec db psql -U postgres -d appdb
 
-db_migrate:
-	go tool \
-	goose -dir ./db/migrations postgres "${DATABASE_URL}" \
-	up
+db-migrate:
+	$(GOOSE) up
+
+db-rollback:
+	$(GOOSE) down
 	
-db_seed:
+db-seed:
 	go run ./cmd/seed/main.go
 	
-sqlc_generate:
+sqlc-generate:
 	go tool sqlc generate
 
-.PHONY: build \
-	dev-with-frontend dev-only-frontend setup-dev-frontend \
+.PHONY: build run clean \
+	frontend-setup dev dev-frontend \
 	lint lint-fix format \
 	test coverage coverage-html \
-	app_up app_down \
-	db_up db_down db_remove db_connect db_migrate \
-	sqlc_generate
+	up down \
+	db-up db-down db-remove db-connect db-migrate \
+	sqlc-generate
