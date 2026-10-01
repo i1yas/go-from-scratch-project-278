@@ -1,6 +1,15 @@
 build:
 	go build -o bin/urlshort main.go
 
+setup-dev-frontend:
+	npm install --prefix ./frontend
+
+dev-with-frontend:
+	node frontend/index.js
+
+dev-only-frontend:
+	npm exec --prefix ./frontend start-hexlet-url-shortener-frontend
+
 lint:
 	golangci-lint run
 
@@ -42,7 +51,9 @@ db_migrate:
 sqlc_generate:
 	go tool sqlc generate
 
-.PHONY: build lint lint-fix format \
+.PHONY: build \
+	dev-with-frontend dev-only-frontend setup-dev-frontend \
+	lint lint-fix format \
 	test coverage coverage-html \
 	app_up app_down \
 	db_up db_down db_connect db_migrate \
