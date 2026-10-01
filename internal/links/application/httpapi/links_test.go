@@ -671,6 +671,75 @@ func TestDeleteLink(t *testing.T) {
 	}
 }
 
+func TestResolveLink(t *testing.T) {
+	originalURL, err := links.NewURL("http://test.com")
+	require.NoError(t, err)
+
+	cases := []struct {
+		name         string
+		url          string
+		setup        func(svg *fakeLinkService)
+		wantStatus   int
+		wantBody     string
+		wantLocation string
+	}{
+		{
+			name: "resolve successful",
+			url:  "/r/mylink",
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("ResolveLink", mock.Anything, "mylink").
+					Return(originalURL, nil)
+			},
+			wantStatus:   302,
+			wantLocation: string(originalURL),
+		},
+		{
+			name: "link not found",
+			url:  "/r/gone",
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("ResolveLink", mock.Anything, "gone").
+					Return(links.URL(""), application.ErrLinkNotFound)
+			},
+			wantStatus: 404,
+			wantBody:   `{"error":"link not found"}`,
+		},
+		{
+			name: "internal error",
+			url:  "/r/mylink",
+			setup: func(svc *fakeLinkService) {
+				svc.On("ResolveLink", mock.Anything, mock.Anything).
+					Return(links.URL(""), application.ErrStoreInternal)
+			},
+			wantStatus: 500,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			linksSvc := new(fakeLinkService)
+			router := setupTestRouter(t, linksSvc)
+
+			tc.setup(linksSvc)
+
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("GET", tc.url, nil)
+			require.NoError(t, err)
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.wantStatus, w.Code)
+			assert.Equal(t, tc.wantLocation, w.Header().Get("Location"))
+
+			if tc.wantBody != "" {
+				require.JSONEq(t, tc.wantBody, w.Body.String())
+			}
+
+			linksSvc.AssertExpectations(t)
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 	os.Exit(m.Run())
