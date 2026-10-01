@@ -188,6 +188,8 @@ func (h *LinksHandler) DeleteLink(ctx *gin.Context) {
 		handleError(ctx, err)
 		return
 	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 // ResolveLink finds link by code and redirects to original url
