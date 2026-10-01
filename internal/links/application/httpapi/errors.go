@@ -2,11 +2,18 @@ package httpapi
 
 import (
 	"errors"
-	"hexleturlshort/internal/links"
-	"hexleturlshort/internal/links/application"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
+)
+
+var (
+	ErrInvalidID    = errors.New("invalid id")
+	ErrInvalidJSON  = errors.New("invalid json")
+	ErrInvalidQuery = errors.New("invalid query")
 )
 
 type errorResponse struct {
@@ -21,6 +28,11 @@ var errorsMappings = []errorResponse{
 		originalErr: ErrInvalidID,
 		status:      http.StatusBadRequest,
 		Error:       "invalid id",
+	},
+	{
+		originalErr: ErrInvalidQuery,
+		status:      http.StatusBadRequest,
+		Error:       "invalid query",
 	},
 	{
 		originalErr: ErrInvalidJSON,

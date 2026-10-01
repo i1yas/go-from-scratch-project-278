@@ -1,14 +1,14 @@
 package httpapi
 
 import (
-	"errors"
 	"fmt"
-	"hexleturlshort/internal/links"
-	"hexleturlshort/internal/links/application"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+
+	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
 )
 
 // LinksHandler handles HTTP requests related to links
@@ -16,11 +16,6 @@ type LinksHandler struct {
 	baseURL links.URL
 	s       linkService
 }
-
-var (
-	ErrInvalidID   = errors.New("invalid id")
-	ErrInvalidJSON = errors.New("invalid json")
-)
 
 // NewLinksHandler creates LinksHandler
 func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {

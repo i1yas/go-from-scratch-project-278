@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
+
 	"hexleturlshort/internal/links/application"
 )
 
@@ -16,7 +18,7 @@ func parseRange(raw string, defaultRange application.Range) (application.Range, 
 
 	err := json.Unmarshal([]byte(raw), &rangeItems)
 	if err != nil {
-		return application.Range{}, ErrInvalidJSON
+		return application.Range{}, fmt.Errorf("%w: invalid range format", ErrInvalidQuery)
 	}
 
 	if len(rangeItems) < 2 {
@@ -37,7 +39,7 @@ func parseSort(raw string, defaultSort application.SortOrder) (application.SortO
 
 	err := json.Unmarshal([]byte(raw), &sortItems)
 	if err != nil {
-		return application.SortOrder{}, ErrInvalidJSON
+		return application.SortOrder{}, fmt.Errorf("%w: invalid sort format", ErrInvalidQuery)
 	}
 
 	if len(sortItems) < 2 {
