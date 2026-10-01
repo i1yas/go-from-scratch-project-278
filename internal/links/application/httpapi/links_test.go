@@ -439,6 +439,168 @@ func TestCreateLink(t *testing.T) {
 	}
 }
 
+func TestUpdateLink(t *testing.T) {
+	cases := []struct {
+		name        string
+		url         string
+		requestBody string
+		setup       func(svg *fakeLinkService)
+		wantStatus  int
+		wantBody    string
+	}{
+		{
+			name: "update link",
+			url:  "/api/links/101",
+			requestBody: `{
+				"original_url": "http://domain101.com",
+				"short_name": "link-101"
+			}`,
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("UpdateLink", mock.Anything, application.UpdateLinkParams{
+						ID:          101,
+						OriginalURL: "http://domain101.com",
+						ShortCode:   "link-101",
+					}).
+					Return(
+						createValidLink(t,
+							101,
+							"http://domain101.com",
+							"link-101",
+						),
+						nil,
+					)
+			},
+			wantStatus: 200,
+			wantBody: `{
+				"id": 101,
+				"original_url": "http://domain101.com",
+				"short_url": "http://short/r/link-101",
+				"short_name": "link-101"
+			}`,
+		},
+		{
+			name: "invalid id",
+			url:  "/api/links/test",
+			requestBody: `{
+				"original_url": "http://domain101.com"
+			}`,
+			setup:      func(*fakeLinkService) {},
+			wantStatus: 400,
+			wantBody:   `{"error": "invalid id"}`,
+		},
+		{
+			name: "missing shortcode",
+			url:  "/api/links/101",
+			requestBody: `{
+				"original_url": "http://domain101.com"
+			}`,
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("UpdateLink", mock.Anything, application.UpdateLinkParams{
+						ID:          101,
+						OriginalURL: "http://domain101.com",
+					}).
+					Return(links.Link{}, &links.LinkError{
+						Fields: map[string]string{
+							"short_name": "invalid shortcode",
+						},
+					})
+			},
+			wantStatus: 422,
+			wantBody: `{
+				"errors": {
+					"short_name": "invalid shortcode"
+				}
+			}`,
+		},
+		{
+			name: "link not found",
+			url:  "/api/links/999",
+			requestBody: `{
+				"original_url": "http://test.com",
+				"short_name": "test"
+			}`,
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("UpdateLink", mock.Anything, application.UpdateLinkParams{
+						ID:          999,
+						OriginalURL: "http://test.com",
+						ShortCode:   "test",
+					}).
+					Return(links.Link{}, application.ErrLinkNotFound)
+			},
+			wantStatus: 404,
+			wantBody:   `{"error":"link not found"}`,
+		},
+		{
+			name: "shortcode conflict",
+			url:  "/api/links/101",
+			requestBody: `{
+				"original_url": "http://test.com",
+				"short_name": "test"
+			}`,
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("UpdateLink", mock.Anything, application.UpdateLinkParams{
+						ID:          101,
+						OriginalURL: "http://test.com",
+						ShortCode:   "test",
+					}).
+					Return(links.Link{}, application.ErrShortCodeConflict)
+			},
+			wantStatus: 409,
+			wantBody: `{
+				"errors": {
+					"short_name": "link with same short_name already exist"
+				}
+			}`,
+		},
+		{
+			name:        "error invalid json",
+			url:         "/api/links/101",
+			requestBody: `}{`,
+			setup:       func(_ *fakeLinkService) {},
+			wantStatus:  400,
+			wantBody:    `{"error": "invalid json"}`,
+		},
+		{
+			name: "internal error",
+			url:  "/api/links/101",
+			requestBody: `{
+				"original_url": "http://domain101.com"
+			}`,
+			setup: func(svc *fakeLinkService) {
+				svc.On("UpdateLink", mock.Anything, mock.Anything).
+					Return(links.Link{}, application.ErrStoreInternal)
+			},
+			wantStatus: 500,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			linksSvc := new(fakeLinkService)
+			router := setupTestRouter(t, linksSvc)
+
+			tc.setup(linksSvc)
+
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("PUT", tc.url, strings.NewReader(tc.requestBody))
+			require.NoError(t, err)
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.wantStatus, w.Code)
+
+			if tc.wantBody != "" {
+				require.JSONEq(t, tc.wantBody, w.Body.String())
+			}
+
+			linksSvc.AssertExpectations(t)
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 	os.Exit(m.Run())
