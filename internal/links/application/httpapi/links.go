@@ -69,7 +69,10 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	}
 
 	// TODO: implement properly
-	ctx.Header("Content-Range", fmt.Sprintf("links 0-%d/%d", len(result), linksResult.Total))
+	ctx.Header("Content-Range", fmt.Sprintf("links %d-%d/%d",
+		linksRange.From,
+		linksRange.From+int32(len(result)),
+		linksResult.Total))
 	ctx.JSON(http.StatusOK, result)
 }
 

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "original_url": "http://domain.com/1",
+    "short_url": "http://short/r/code-101",
+    "short_name": "code-101"
+  },
+  {
+    "id": 2,
+    "original_url": "http://domain.com/2",
+    "short_url": "http://short/r/code-102",
+    "short_name": "code-102"
+  },
+  {
+    "id": 3,
+    "original_url": "http://domain.com/3",
+    "short_url": "http://short/r/code-103",
+    "short_name": "code-103"
+  },
+  {
+    "id": 4,
+    "original_url": "http://domain.com/4",
+    "short_url": "http://short/r/code-104",
+    "short_name": "code-104"
+  },
+  {
+    "id": 5,
+    "original_url": "http://domain.com/5",
+    "short_url": "http://short/r/code-105",
+    "short_name": "code-105"
+  }
+]
