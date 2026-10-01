@@ -57,7 +57,9 @@ var errorsMappings = []errorResponse{
 	{
 		originalErr: application.ErrShortCodeConflict,
 		status:      http.StatusConflict,
-		Error:       "shortname already exist",
+		Errors: map[string]string{
+			"short_name": "link with same short_name already exist",
+		},
 	},
 	{
 		originalErr: application.ErrLinkNotFound,

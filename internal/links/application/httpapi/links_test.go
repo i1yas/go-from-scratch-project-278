@@ -376,6 +376,27 @@ func TestCreateLink(t *testing.T) {
 			}`,
 		},
 		{
+			name: "shortcode conflict",
+			requestBody: `{
+				"original_url": "http://test.com",
+				"short_name": "link-101"
+			}`,
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("CreateLink", mock.Anything, application.CreateLinkParams{
+						OriginalURL: "http://test.com",
+						ShortCode:   &code,
+					}).
+					Return(links.Link{}, application.ErrShortCodeConflict)
+			},
+			wantStatus: 409,
+			wantBody: `{
+				"errors": {
+					"short_name": "link with same short_name already exist"
+				}
+			}`,
+		},
+		{
 			name:        "error invalid json",
 			requestBody: `}{`,
 			setup:       func(_ *fakeLinkService) {},
