@@ -1,6 +1,8 @@
 package links
 
-import "net/url"
+import (
+	"net/url"
+)
 
 // Link represents information about link entry
 type Link struct {
@@ -33,6 +35,18 @@ func NewLink(originalURLRaw, shortcodeRaw string) (Link, error) {
 		OriginalURL: originalURL,
 		ShortCode:   shortcode,
 	}
+
+	return link, nil
+}
+
+// NewLinkWithID same as NewLink but with id
+func NewLinkWithID(id int64, originalURLRaw, shortcodeRaw string) (Link, error) {
+	link, err := NewLink(originalURLRaw, shortcodeRaw)
+	if err != nil {
+		return Link{}, err
+	}
+
+	link.ID = id
 
 	return link, nil
 }
