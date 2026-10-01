@@ -64,7 +64,19 @@ var errorsMappings = []errorResponse{
 	},
 }
 
+var internalErrors = []error{
+	application.ErrStoreInternal,
+	application.ErrInvalidStoreValue,
+}
+
 func handleError(ctx *gin.Context, err error) {
+	for _, internalErr := range internalErrors {
+		if errors.Is(err, internalErr) {
+			ctx.Status(500)
+			return
+		}
+	}
+
 	for _, mappedErr := range errorsMappings {
 		if errors.Is(err, mappedErr.originalErr) {
 			ctx.JSON(mappedErr.status, mappedErr)
