@@ -1,5 +1,5 @@
 build:
-	go build -o bin/urlshort main.go
+	go build -o bin/urlshort ./cmd/api/main.go
 
 setup-dev-frontend:
 	npm install --prefix ./frontend
