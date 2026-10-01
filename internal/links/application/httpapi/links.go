@@ -68,11 +68,12 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 		result[i] = respItem
 	}
 
-	// TODO: implement properly
-	ctx.Header("Content-Range", fmt.Sprintf("links %d-%d/%d",
-		linksRange.From,
-		linksRange.From+int32(len(result))-1,
-		linksResult.Total))
+	ctx.Header("Content-Range", formatContentRangeHeader(contentRangeParams{
+		itemName:   "links",
+		itemsRange: linksRange,
+		itemsCount: len(result),
+		totalCount: linksResult.Total,
+	}))
 	ctx.JSON(http.StatusOK, result)
 }
 
@@ -224,4 +225,22 @@ func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, er
 		ShortName:   string(link.ShortCode),
 		ShortURL:    string(shortURL),
 	}, nil
+}
+
+type contentRangeParams struct {
+	itemName   string
+	itemsRange application.Range
+	itemsCount int
+	totalCount int64
+}
+
+func formatContentRangeHeader(params contentRangeParams) string {
+	r := params.itemsRange
+
+	return fmt.Sprintf("%s %d-%d/%d",
+		params.itemName,
+		r.From,
+		r.From+int32(params.itemsCount)-1,
+		params.totalCount,
+	)
 }
