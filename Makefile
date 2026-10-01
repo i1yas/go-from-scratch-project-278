@@ -40,6 +40,9 @@ db_up:
 db_down:
 	docker compose down db
 
+db_remove:
+	docker compose down db -v
+
 db_connect:
 	docker compose exec db psql -U postgres -d appdb
 
@@ -47,6 +50,9 @@ db_migrate:
 	go tool \
 	goose -dir ./db/migrations postgres "${DATABASE_URL}" \
 	up
+	
+db_seed:
+	go run ./cmd/seed/main.go
 	
 sqlc_generate:
 	go tool sqlc generate
@@ -56,5 +62,5 @@ sqlc_generate:
 	lint lint-fix format \
 	test coverage coverage-html \
 	app_up app_down \
-	db_up db_down db_connect db_migrate \
+	db_up db_down db_remove db_connect db_migrate \
 	sqlc_generate
