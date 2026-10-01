@@ -601,6 +601,76 @@ func TestUpdateLink(t *testing.T) {
 	}
 }
 
+func TestDeleteLink(t *testing.T) {
+	cases := []struct {
+		name       string
+		url        string
+		setup      func(svg *fakeLinkService)
+		wantStatus int
+		wantBody   string
+	}{
+		{
+			name: "delete link",
+			url:  "/api/links/101",
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("DeleteLink", mock.Anything, int64(101)).
+					Return(nil)
+			},
+			wantStatus: 204,
+		},
+		{
+			name:       "invalid id",
+			url:        "/api/links/test",
+			setup:      func(*fakeLinkService) {},
+			wantStatus: 400,
+			wantBody:   `{"error": "invalid id"}`,
+		},
+		{
+			name: "link not found",
+			url:  "/api/links/999",
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("DeleteLink", mock.Anything, int64(999)).
+					Return(application.ErrLinkNotFound)
+			},
+			wantStatus: 404,
+			wantBody:   `{"error":"link not found"}`,
+		},
+		{
+			name: "internal error",
+			url:  "/api/links/101",
+			setup: func(svc *fakeLinkService) {
+				svc.On("DeleteLink", mock.Anything, mock.Anything).
+					Return(application.ErrStoreInternal)
+			},
+			wantStatus: 500,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			linksSvc := new(fakeLinkService)
+			router := setupTestRouter(t, linksSvc)
+
+			tc.setup(linksSvc)
+
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("DELETE", tc.url, nil)
+			require.NoError(t, err)
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tc.wantStatus, w.Code)
+
+			if tc.wantBody != "" {
+				require.JSONEq(t, tc.wantBody, w.Body.String())
+			}
+
+			linksSvc.AssertExpectations(t)
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 	os.Exit(m.Run())
