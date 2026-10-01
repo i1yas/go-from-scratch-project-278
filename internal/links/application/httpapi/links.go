@@ -1,27 +1,15 @@
 package httpapi
 
 import (
-	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-
-	"hexleturlshort/internal/links"
-	"hexleturlshort/internal/links/application"
 )
-
-type linkService interface {
-	GetLinks(ctx context.Context, params application.GetLinksParams) (application.LinksResult, error)
-	GetLinkByID(ctx context.Context, id int64) (links.Link, error)
-	CreateLink(ctx context.Context, params application.CreateLinkParams) (links.Link, error)
-	UpdateLink(ctx context.Context, params application.UpdateLinkParams) (links.Link, error)
-	DeleteLink(ctx context.Context, id int64) error
-	ResolveLink(ctx context.Context, code string) (links.URL, error)
-}
 
 // LinksHandler handles HTTP requests related to links
 type LinksHandler struct {
@@ -236,122 +224,4 @@ func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, er
 		ShortName:   string(link.ShortCode),
 		ShortURL:    string(shortURL),
 	}, nil
-}
-
-type errorResponse struct {
-	status      int
-	originalErr error
-	Error       string            `json:"error,omitempty"`
-	Errors      map[string]string `json:"errors,omitempty"`
-}
-
-var errorsMappings = []errorResponse{
-	{
-		originalErr: ErrInvalidID,
-		status:      http.StatusBadRequest,
-		Error:       "invalid id",
-	},
-	{
-		originalErr: ErrInvalidJSON,
-		status:      http.StatusBadRequest,
-		Error:       "invalid json",
-	},
-	{
-		originalErr: application.ErrInvalidRange,
-		status:      http.StatusBadRequest,
-		Error:       "invalid range",
-	},
-	{
-		originalErr: application.ErrInvalidSortOrder,
-		status:      http.StatusBadRequest,
-		Error:       "invalid sort order",
-	},
-	{
-		originalErr: application.ErrUnsupportedSortOrder,
-		status:      http.StatusBadRequest,
-		Error:       "invalid sort order",
-	},
-	{
-		originalErr: application.ErrShortCodeConflict,
-		status:      http.StatusConflict,
-		Error:       "shortname already exist",
-	},
-	{
-		originalErr: application.ErrLinkNotFound,
-		status:      http.StatusNotFound,
-		Error:       "link not found",
-	},
-	{
-		originalErr: links.ErrInvlalidShortCode,
-		status:      http.StatusUnprocessableEntity,
-		Error:       "invalid shortname",
-	},
-	{
-		originalErr: links.ErrInvlalidURL,
-		status:      http.StatusUnprocessableEntity,
-		Error:       "invalid url",
-	},
-}
-
-func handleError(ctx *gin.Context, err error) {
-	for _, mappedErr := range errorsMappings {
-		if errors.Is(err, mappedErr.originalErr) {
-			ctx.JSON(mappedErr.status, mappedErr)
-
-			return
-		}
-	}
-
-	var linkErr *links.LinkError
-	if errors.As(err, &linkErr) {
-		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
-			Errors: linkErr.Fields,
-		})
-
-		return
-	}
-
-	ctx.Status(500)
-}
-
-func parseRange(raw string, defaultRange application.Range) (application.Range, error) {
-	if raw == "" {
-		return defaultRange, nil
-	}
-
-	type rangeShape []int32
-
-	var rangeItems rangeShape
-
-	err := json.Unmarshal([]byte(raw), &rangeItems)
-	if err != nil {
-		return application.Range{}, ErrInvalidJSON
-	}
-
-	if len(rangeItems) < 2 {
-		return defaultRange, nil
-	}
-
-	return application.NewRange(rangeItems[0], rangeItems[1])
-}
-
-func parseSort(raw string, defaultSort application.SortOrder) (application.SortOrder, error) {
-	if raw == "" {
-		return defaultSort, nil
-	}
-
-	type sortShape []string
-
-	var sortItems sortShape
-
-	err := json.Unmarshal([]byte(raw), &sortItems)
-	if err != nil {
-		return application.SortOrder{}, ErrInvalidJSON
-	}
-
-	if len(sortItems) < 2 {
-		return defaultSort, nil
-	}
-
-	return application.NewSortOrder(sortItems[0], sortItems[1])
 }
