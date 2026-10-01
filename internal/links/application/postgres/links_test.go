@@ -80,8 +80,8 @@ func TestGetLinksPagination(t *testing.T) {
 			name:        "from 0 to 3, total 4",
 			from:        0,
 			to:          3,
-			total:       4,
-			resultCount: 3,
+			total:       5,
+			resultCount: 4,
 		},
 		{
 			name:        "from 0 to 3, total 0",

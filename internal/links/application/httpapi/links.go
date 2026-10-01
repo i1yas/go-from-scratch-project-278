@@ -26,7 +26,7 @@ func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
 func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	linksRange, err := parseRange(ctx.Query("range"), application.Range{
 		From: 0,
-		To:   5,
+		To:   4,
 	})
 	if err != nil {
 		handleError(ctx, err)
@@ -71,7 +71,7 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	// TODO: implement properly
 	ctx.Header("Content-Range", fmt.Sprintf("links %d-%d/%d",
 		linksRange.From,
-		linksRange.From+int32(len(result)),
+		linksRange.From+int32(len(result))-1,
 		linksResult.Total))
 	ctx.JSON(http.StatusOK, result)
 }

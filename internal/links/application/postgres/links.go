@@ -52,8 +52,13 @@ func (s *LinksStore) GetLinks(ctx context.Context, params application.GetLinksPa
 		LIMIT $1 OFFSET $2;
 	`, sortOrder)
 
-	limit := params.Range.To - params.Range.From
+	// NOTE: upper bound is inclusive
+	limit := params.Range.To + 1 - params.Range.From
+
 	offset := params.Range.From
+	if params.Range.From == params.Range.To {
+		limit = 0
+	}
 
 	rows, err := s.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {

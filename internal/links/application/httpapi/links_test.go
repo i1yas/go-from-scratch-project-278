@@ -127,12 +127,12 @@ func TestGetLinks(t *testing.T) {
 		wantContentRange string
 	}{
 		{
-			name: "no query params",
+			name: "no query params, default params used",
 			url:  "/api/links",
 			setup: func(svc *fakeLinkService) {
 				svc.
 					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: createRange(t, 0, 5),
+						Range: createRange(t, 0, 4),
 						Sort:  createSort(t, "id", "ASC"),
 					}).
 					Return(application.LinksResult{
@@ -144,10 +144,10 @@ func TestGetLinks(t *testing.T) {
 			},
 			wantStatus:       200,
 			wantBody:         loadResponseFixture(t, "get_links-no-params"),
-			wantContentRange: "links 0-5/10",
+			wantContentRange: "links 0-4/10",
 		},
 		{
-			name: "links from 2nd to 3rd, got 2",
+			name: "links from 2nd to 3rd, got 3",
 			url:  "/api/links?range=[1,3]",
 			setup: func(svc *fakeLinkService) {
 				svc.
@@ -157,7 +157,7 @@ func TestGetLinks(t *testing.T) {
 					}).
 					Return(application.LinksResult{
 						Items: createLinks(t, []int64{
-							2, 3,
+							2, 3, 4,
 						}),
 						Total: 10,
 					}, nil)
@@ -172,7 +172,7 @@ func TestGetLinks(t *testing.T) {
 			setup: func(svc *fakeLinkService) {
 				svc.
 					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: createRange(t, 0, 5),
+						Range: createRange(t, 0, 4),
 						Sort:  createSort(t, "original_url", "DESC"),
 					}).
 					Return(application.LinksResult{
@@ -184,27 +184,27 @@ func TestGetLinks(t *testing.T) {
 			},
 			wantStatus:       200,
 			wantBody:         loadResponseFixture(t, "get_links?sort=[original_url,DESC]"),
-			wantContentRange: "links 0-5/10",
+			wantContentRange: "links 0-4/10",
 		},
 		{
 			name: "sort by shot_url, link from 5th to 7th",
-			url:  `/api/links?range=[5,8]&sort=["short_url","ASC"]`,
+			url:  `/api/links?range=[5,7]&sort=["short_url","ASC"]`,
 			setup: func(svc *fakeLinkService) {
 				svc.
 					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: createRange(t, 5, 8),
+						Range: createRange(t, 5, 7),
 						Sort:  createSort(t, "short_url", "ASC"),
 					}).
 					Return(application.LinksResult{
 						Items: createLinks(t, []int64{
-							5, 6, 7,
+							6, 7, 8,
 						}),
 						Total: 10,
 					}, nil)
 			},
 			wantStatus:       200,
-			wantBody:         loadResponseFixture(t, "get_links?range=[5,8]&sort=[short_url,ASC]"),
-			wantContentRange: "links 5-8/10",
+			wantBody:         loadResponseFixture(t, "get_links?range=[5,7]&sort=[short_url,ASC]"),
+			wantContentRange: "links 5-7/10",
 		},
 		{
 			name:       "invalid range",
