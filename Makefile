@@ -43,6 +43,9 @@ dev-frontend:
 up:
 	docker compose --profile full up -d
 
+rebuild:
+	docker compose --profile full up -d --build app
+
 down:
 	docker compose --profile full down
 
