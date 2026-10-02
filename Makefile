@@ -31,13 +31,13 @@ coverage-html: test
 	
 ##@ Frontend
 frontend-setup:
-	npm install --prefix ./frontend
+	npm install
 
 dev:
-	node frontend/index.js
+	npx concurrently --kill-others "npx start-hexlet-url-shortener-frontend" "go run ./cmd/api/main.go"
 
 dev-frontend:
-	npm exec --prefix ./frontend start-hexlet-url-shortener-frontend
+	npm exec start-hexlet-url-shortener-frontend
 
 ##@ Docker app
 up:
