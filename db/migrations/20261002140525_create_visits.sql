@@ -1,0 +1,13 @@
+-- +goose Up
+CREATE TABLE visits (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    link_id BIGINT NOT NULL REFERENCES links(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip INET NOT NULL,
+    referer VARCHAR(255),
+    user_agent VARCHAR(255),
+    status SMALLINT NOT NULL
+);
+
+-- +goose Down
+DROP TABLE visits;

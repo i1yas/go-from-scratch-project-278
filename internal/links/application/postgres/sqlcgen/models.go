@@ -4,8 +4,25 @@
 
 package sqlcgen
 
+import (
+	"database/sql"
+	"time"
+
+	"github.com/sqlc-dev/pqtype"
+)
+
 type Link struct {
 	ID          int64  `json:"id"`
 	OriginalUrl string `json:"original_url"`
 	Shortcode   string `json:"shortcode"`
+}
+
+type Visit struct {
+	ID        int64          `json:"id"`
+	LinkID    int64          `json:"link_id"`
+	CreatedAt time.Time      `json:"created_at"`
+	Ip        pqtype.Inet    `json:"ip"`
+	Referer   sql.NullString `json:"referer"`
+	UserAgent sql.NullString `json:"user_agent"`
+	Status    int16          `json:"status"`
 }
