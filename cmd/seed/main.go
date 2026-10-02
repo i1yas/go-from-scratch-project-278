@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"hexleturlshort/internal/config"
-	"hexleturlshort/internal/database"
 	"os"
 	"path/filepath"
+
+	"hexleturlshort/internal/config"
+	"hexleturlshort/internal/database"
 )
 
 func main() {
