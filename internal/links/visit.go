@@ -7,9 +7,12 @@ import (
 	"time"
 )
 
-var ErrInvalidVisit = errors.New("invalid visit")
-var ErrInvalidIP = errors.New("invalid IP address")
+var (
+	ErrInvalidVisit = errors.New("invalid visit")
+	ErrInvalidIP    = errors.New("invalid IP address")
+)
 
+// Visit contains info about link visit
 type Visit struct {
 	ID        int64
 	LinkID    int64
@@ -20,6 +23,7 @@ type Visit struct {
 	Status    int
 }
 
+// NewVisit validates input and creates Visit
 func NewVisit(
 	linkID int64,
 	ip string,

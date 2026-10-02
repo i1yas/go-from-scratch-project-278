@@ -27,7 +27,11 @@ func TestCreateLink(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		got, err := svc.CreateLink(t.Context(), params)
 
@@ -53,7 +57,11 @@ func TestCreateLink(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{codes: []string{generatedCode}}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		got, err := svc.CreateLink(t.Context(), params)
 
@@ -88,7 +96,11 @@ func TestCreateLink(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{codes: codes}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		got, err := svc.CreateLink(t.Context(), params)
 
@@ -108,7 +120,11 @@ func TestCreateLink(t *testing.T) {
 			ShortCode:   &emptyCode,
 		}
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.CreateLink(t.Context(), params)
 
@@ -128,7 +144,11 @@ func TestCreateLink(t *testing.T) {
 			ShortCode:   &code,
 		}
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.CreateLink(t.Context(), params)
 
@@ -146,7 +166,11 @@ func TestCreateLink(t *testing.T) {
 		}
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		_, err := svc.CreateLink(t.Context(), params)
 
@@ -167,7 +191,11 @@ func TestCreateLink(t *testing.T) {
 			Return(links.Link{}, ErrShortCodeConflict)
 
 		generator := &fakeShortcodeGen{codes: []string{"code"}}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		_, err := svc.CreateLink(t.Context(), params)
 
@@ -189,7 +217,11 @@ func TestCreateLink(t *testing.T) {
 			Return(links.Link{}, ErrShortCodeConflict)
 
 		generator := &fakeShortcodeGen{codes: []string{""}}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		_, err := svc.CreateLink(t.Context(), params)
 

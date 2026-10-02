@@ -50,6 +50,20 @@ func (s *fakeLinksStore) DeleteLink(ctx context.Context, id int64) error {
 	return args.Error(0)
 }
 
+type fakeVisitsStore struct {
+	mock.Mock
+}
+
+func (s *fakeVisitsStore) GetVisits(ctx context.Context, params GetVisitsParams) ([]links.Visit, error) {
+	args := s.Called(ctx, params)
+	return args.Get(0).([]links.Visit), args.Error(1)
+}
+
+func (s *fakeVisitsStore) GetVisitsTotalCount(ctx context.Context) (int64, error) {
+	args := s.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 type fakeShortcodeGen struct {
 	codes []string
 	calls int

@@ -17,7 +17,11 @@ func TestDeleteLink(t *testing.T) {
 			On("DeleteLink", mock.Anything, id).
 			Return(nil)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		err := svc.DeleteLink(t.Context(), id)
 
@@ -32,7 +36,11 @@ func TestDeleteLink(t *testing.T) {
 			On("DeleteLink", mock.Anything, mock.Anything).
 			Return(ErrLinkNotFound)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		err := svc.DeleteLink(t.Context(), 101)
 

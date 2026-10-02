@@ -78,7 +78,11 @@ func TestGetLinks(t *testing.T) {
 				Return(tc.total, nil)
 
 			generator := &fakeShortcodeGen{}
-			svc := NewService(store, generator)
+			svc := NewService(
+				store,
+				&fakeVisitsStore{},
+				generator,
+			)
 
 			got, err := svc.GetLinks(t.Context(), params)
 
@@ -106,7 +110,11 @@ func TestGetLinkByID(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		got, err := svc.GetLinkByID(t.Context(), want.ID)
 
@@ -122,7 +130,11 @@ func TestGetLinkByID(t *testing.T) {
 			Return(links.Link{}, ErrLinkNotFound)
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(store, generator)
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+		)
 
 		_, err := svc.GetLinkByID(t.Context(), 101)
 

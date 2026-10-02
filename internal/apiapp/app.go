@@ -36,11 +36,13 @@ func Run(ctx context.Context) error {
 	}
 
 	linksStore := postgres.NewLinksStore(db)
+	visitsStore := postgres.NewVisitsStore(db)
 
 	codeGenerator := shortcodegen.NewGenerator(shortcodegen.DefaultRandSource)
 
 	service := application.NewService(
 		linksStore,
+		visitsStore,
 		codeGenerator,
 	)
 

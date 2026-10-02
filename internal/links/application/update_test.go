@@ -21,7 +21,11 @@ func TestUpdateLink(t *testing.T) {
 			On("UpdateLink", mock.Anything, want).
 			Return(want, nil)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		got, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
 			ID:          want.ID,
@@ -37,7 +41,11 @@ func TestUpdateLink(t *testing.T) {
 	t.Run("update with invalid shortcode", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
 			ID:          101,
@@ -54,7 +62,11 @@ func TestUpdateLink(t *testing.T) {
 	t.Run("update with invalid original url", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
 			ID:          101,
@@ -77,7 +89,11 @@ func TestUpdateLink(t *testing.T) {
 			On("UpdateLink", mock.Anything, mock.Anything).
 			Return(links.Link{}, ErrLinkNotFound)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
 			ID:          101,
@@ -99,7 +115,11 @@ func TestUpdateLink(t *testing.T) {
 			On("UpdateLink", mock.Anything, want).
 			Return(want, ErrShortCodeConflict)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
 			ID:          want.ID,

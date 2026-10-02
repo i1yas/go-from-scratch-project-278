@@ -24,7 +24,11 @@ func TestResolveLink(t *testing.T) {
 			On("GetLinkByCode", mock.Anything, code).
 			Return(want, nil)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		got, err := svc.ResolveLink(t.Context(), codeRaw)
 
@@ -38,7 +42,11 @@ func TestResolveLink(t *testing.T) {
 
 		emptyCode := ""
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.ResolveLink(t.Context(), emptyCode)
 
@@ -55,7 +63,11 @@ func TestResolveLink(t *testing.T) {
 			On("GetLinkByCode", mock.Anything, mock.Anything).
 			Return(links.Link{}, ErrLinkNotFound)
 
-		svc := NewService(store, &fakeShortcodeGen{})
+		svc := NewService(
+			store,
+			&fakeVisitsStore{},
+			&fakeShortcodeGen{},
+		)
 
 		_, err := svc.ResolveLink(t.Context(), codeRaw)
 
