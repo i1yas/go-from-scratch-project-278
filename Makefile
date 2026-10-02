@@ -71,6 +71,9 @@ db-rollback:
 db-seed:
 	go run ./cmd/seed/main.go
 	
+migration-add:
+	$(GOOSE) create $(NAME) sql
+
 sqlc-generate:
 	go tool sqlc generate
 
