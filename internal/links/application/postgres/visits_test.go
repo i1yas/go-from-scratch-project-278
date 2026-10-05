@@ -260,3 +260,83 @@ func TestGetVisitsTotalCount(t *testing.T) {
 		})
 	})
 }
+
+func TestCreateVisit(t *testing.T) {
+	visitWithOptionals, err := links.NewVisit(
+		1,
+		"1.2.3.4",
+		"http://test.com",
+		"user-agent",
+		302,
+	)
+	require.NoError(t, err)
+
+	visitWithoutOptionals, err := links.NewVisit(
+		1,
+		"1.2.3.4",
+		"http://test.com",
+		"user-agent",
+		302,
+	)
+	require.NoError(t, err)
+
+	cases := []struct {
+		name  string
+		input links.Visit
+	}{
+		{
+			name:  "with optional fields",
+			input: visitWithOptionals,
+		},
+		{
+			name:  "without optional fields",
+			input: visitWithoutOptionals,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := setupTestDB(t)
+
+			withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+				store := NewVisitsStore(tx)
+
+				seedDB(t, tx, "links")
+
+				err = store.CreateVisit(ctx, tc.input)
+				require.NoError(t, err)
+
+				rang, err := application.NewRange(0, 1)
+				require.NoError(t, err)
+
+				sort, err := application.NewSortOrder("id", "ASC")
+				require.NoError(t, err)
+
+				visits, err := store.GetVisits(ctx, application.GetVisitsParams{
+					Range: rang,
+					Sort:  sort,
+				})
+				require.NoError(t, err)
+
+				got := visits[0]
+
+				require.Equal(t, tc.input.LinkID, got.LinkID)
+				require.Equal(t, tc.input.IP, got.IP)
+				require.Equal(t, tc.input.Referer, got.Referer)
+				require.Equal(t, tc.input.UserAgent, got.UserAgent)
+				require.Equal(t, tc.input.Status, got.Status)
+			})
+		})
+	}
+
+	t.Run("link does not exist", func(t *testing.T) {
+		db := setupTestDB(t)
+
+		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+			store := NewVisitsStore(tx)
+
+			err := store.CreateVisit(ctx, visitWithOptionals)
+			require.ErrorIs(t, err, application.ErrStoreInternal)
+		})
+	})
+}

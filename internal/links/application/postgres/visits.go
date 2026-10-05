@@ -2,7 +2,12 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"net"
+	"net/netip"
+
+	"github.com/sqlc-dev/pqtype"
 
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
@@ -114,6 +119,26 @@ func (s *VisitsStore) GetVisitsTotalCount(ctx context.Context) (int64, error) {
 	return totalCount, nil
 }
 
+// CreateVisit creates visit in store
+func (s *VisitsStore) CreateVisit(ctx context.Context, visit links.Visit) error {
+	rowsAffected, err := s.q.CreateVisit(ctx, sqlcgen.CreateVisitParams{
+		LinkID:    visit.LinkID,
+		Ip:        addrToPgInet(visit.IP),
+		Referer:   nullString(visit.Referer),
+		UserAgent: nullString(visit.UserAgent),
+		Status:    int16(visit.Status),
+	})
+	if err != nil {
+		return fmt.Errorf("%w: %w", application.ErrStoreInternal, err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("%w: failed to insert visit", application.ErrStoreInternal)
+	}
+
+	return nil
+}
+
 func convertToVisit(dbVisit sqlcgen.Visit) (links.Visit, error) {
 	visit, err := links.NewVisit(
 		dbVisit.LinkID,
@@ -130,4 +155,21 @@ func convertToVisit(dbVisit sqlcgen.Visit) (links.Visit, error) {
 	visit.CreatedAt = dbVisit.CreatedAt
 
 	return visit, nil
+}
+
+func nullString(s string) sql.NullString {
+	return sql.NullString{
+		String: s,
+		Valid:  s != "",
+	}
+}
+
+func addrToPgInet(addr netip.Addr) pqtype.Inet {
+	return pqtype.Inet{
+		IPNet: net.IPNet{
+			IP:   net.IP(addr.AsSlice()),
+			Mask: net.IPMask{0, 0, 0, 0},
+		},
+		Valid: true,
+	}
 }
