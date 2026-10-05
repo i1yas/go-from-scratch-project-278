@@ -21,9 +21,13 @@ func NewVisitsStore(db sqlcgen.DBTX) *VisitsStore {
 	return &VisitsStore{q: querier, db: db}
 }
 
-var getVisitsSupportedSort = map[string]struct{}{
-	"id ASC":  {},
-	"id DESC": {},
+var getVisitsSupportedSort = map[string]string{
+	"id ASC":       "id ASC",
+	"id DESC":      "id DESC",
+	"ip ASC":       "inet(ip) ASC, id ASC",
+	"ip DESC":      "inet(ip) DESC, id ASC",
+	"referer ASC":  "referer ASC NULLS FIRST, id ASC",
+	"referer DESC": "referer DESC NULLS LAST, id ASC",
 }
 
 // GetVisits loads visits from store
@@ -31,9 +35,7 @@ func (s *VisitsStore) GetVisits(
 	ctx context.Context,
 	params application.GetVisitsParams,
 ) ([]links.Visit, error) {
-	sortOrder := params.Sort.String()
-
-	_, ok := getVisitsSupportedSort[sortOrder]
+	sortOrder, ok := getVisitsSupportedSort[params.Sort.String()]
 	if !ok {
 		return nil, application.ErrUnsupportedSortOrder
 	}
@@ -85,7 +87,7 @@ func (s *VisitsStore) GetVisits(
 
 		visit, err := convertToVisit(i)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", application.ErrInvalidStoreValue, err)
+			return nil, err
 		}
 
 		items = append(items, visit)
@@ -115,7 +117,7 @@ func (s *VisitsStore) GetVisitsTotalCount(ctx context.Context) (int64, error) {
 func convertToVisit(dbVisit sqlcgen.Visit) (links.Visit, error) {
 	visit, err := links.NewVisit(
 		dbVisit.LinkID,
-		dbVisit.Ip.IPNet.String(),
+		dbVisit.Ip.IPNet.IP.String(),
 		dbVisit.Referer.String,
 		dbVisit.UserAgent.String,
 		int(dbVisit.Status),

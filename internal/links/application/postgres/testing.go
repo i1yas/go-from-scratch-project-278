@@ -3,8 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"hexleturlshort/internal/links"
 	"log"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -13,6 +13,9 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+
+	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application/postgres/sqlcgen"
 )
 
 var testDBContainer *postgres.PostgresContainer
@@ -120,4 +123,50 @@ func linksCodes(linkItems []links.Link) []links.ShortCode {
 	}
 
 	return codes
+}
+
+func seedDB(t *testing.T, db sqlcgen.DBTX, name string) {
+	path := filepath.Join("testdata", "seeds", name+".sql")
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	query := string(data)
+
+	result, err := db.ExecContext(t.Context(), query)
+	require.NoError(t, err)
+
+	rows, err := result.RowsAffected()
+	require.NoError(t, err)
+
+	require.NotZero(t, rows)
+}
+
+func timeFromISO(t *testing.T, s string) time.Time {
+	result, err := time.Parse(time.RFC3339, s)
+	require.NoError(t, err)
+
+	return result
+}
+
+func requireEqualVisit(t *testing.T, expected, actual links.Visit) {
+	t.Helper()
+
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.LinkID, actual.LinkID)
+	require.Equal(t, expected.IP, actual.IP)
+	require.Equal(t, expected.Referer, actual.Referer)
+	require.Equal(t, expected.UserAgent, actual.UserAgent)
+	require.Equal(t, expected.Status, actual.Status)
+	require.Equal(t, expected.CreatedAt.UTC(), actual.CreatedAt.UTC())
+}
+
+func visitsIDs(visits []links.Visit) []int64 {
+	ids := make([]int64, len(visits))
+
+	for i, visit := range visits {
+		ids[i] = visit.ID
+	}
+
+	return ids
 }
