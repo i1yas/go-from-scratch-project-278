@@ -7,7 +7,39 @@ package sqlcgen
 
 import (
 	"context"
+	"database/sql"
+
+	"github.com/sqlc-dev/pqtype"
 )
+
+const createVisit = `-- name: CreateVisit :execrows
+INSERT INTO visits
+    (link_id, ip, referer, user_agent, status)
+VALUES
+    ($1, $2, $3, $4, $5)
+`
+
+type CreateVisitParams struct {
+	LinkID    int64          `json:"link_id"`
+	Ip        pqtype.Inet    `json:"ip"`
+	Referer   sql.NullString `json:"referer"`
+	UserAgent sql.NullString `json:"user_agent"`
+	Status    int16          `json:"status"`
+}
+
+func (q *Queries) CreateVisit(ctx context.Context, arg CreateVisitParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, createVisit,
+		arg.LinkID,
+		arg.Ip,
+		arg.Referer,
+		arg.UserAgent,
+		arg.Status,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
 
 const getVisitsTotalCount = `-- name: GetVisitsTotalCount :one
 SELECT count(*)

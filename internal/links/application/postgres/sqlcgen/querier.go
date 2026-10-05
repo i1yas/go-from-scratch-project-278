@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	CreateLink(ctx context.Context, arg CreateLinkParams) (Link, error)
+	CreateVisit(ctx context.Context, arg CreateVisitParams) (int64, error)
 	DeleteLink(ctx context.Context, id int64) (int64, error)
 	GetLinkByCode(ctx context.Context, shortcode string) (Link, error)
 	GetLinkByID(ctx context.Context, id int64) (Link, error)
