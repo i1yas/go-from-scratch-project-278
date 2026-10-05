@@ -47,7 +47,7 @@ func (s *VisitsStore) GetVisits(
 			referer,
 			user_agent,
 			status
-		FROM links
+		FROM visits
 		ORDER BY %s
 		LIMIT $1 OFFSET $2;
 	`, sortOrder)
@@ -55,7 +55,7 @@ func (s *VisitsStore) GetVisits(
 	// NOTE: upper bound is inclusive
 	limit := params.Range.To + 1 - params.Range.From
 
-	offset := params.Range.From
+	offset := max(0, params.Range.From)
 	if params.Range.From == params.Range.To {
 		limit = 0
 	}
