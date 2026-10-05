@@ -13,5 +13,5 @@ type linkService interface {
 	CreateLink(ctx context.Context, params application.CreateLinkParams) (links.Link, error)
 	UpdateLink(ctx context.Context, params application.UpdateLinkParams) (links.Link, error)
 	DeleteLink(ctx context.Context, id int64) error
-	ResolveLink(ctx context.Context, code string) (links.URL, error)
+	ResolveLink(ctx context.Context, params application.ResolveLinkParams) (links.URL, error)
 }

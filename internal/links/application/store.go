@@ -19,4 +19,5 @@ type linkStore interface {
 type visitsStore interface {
 	GetVisits(ctx context.Context, params GetVisitsParams) ([]links.Visit, error)
 	GetVisitsTotalCount(ctx context.Context) (int64, error)
+	CreateVisit(ctx context.Context, visit links.Visit) error
 }

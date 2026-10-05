@@ -197,13 +197,21 @@ func (h *LinksHandler) DeleteLink(ctx *gin.Context) {
 func (h *LinksHandler) ResolveLink(ctx *gin.Context) {
 	code := ctx.Param("code")
 
-	originalURL, err := h.s.ResolveLink(ctx, code)
+	status := http.StatusFound
+
+	originalURL, err := h.s.ResolveLink(ctx, application.ResolveLinkParams{
+		Code:      code,
+		IP:        ctx.ClientIP(),
+		Referer:   ctx.Request.Referer(),
+		UserAgent: ctx.Request.UserAgent(),
+		Status:    status,
+	})
 	if err != nil {
 		handleError(ctx, err)
 		return
 	}
 
-	ctx.Redirect(http.StatusFound, string(originalURL))
+	ctx.Redirect(status, string(originalURL))
 }
 
 type linkResponse struct {

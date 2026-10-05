@@ -64,6 +64,11 @@ func (s *fakeVisitsStore) GetVisitsTotalCount(ctx context.Context) (int64, error
 	return args.Get(0).(int64), args.Error(1)
 }
 
+func (s *fakeVisitsStore) CreateVisit(ctx context.Context, link links.Visit) error {
+	args := s.Called(ctx, link)
+	return args.Error(0)
+}
+
 type fakeShortcodeGen struct {
 	codes []string
 	calls int
@@ -92,4 +97,25 @@ func createValidLink(t *testing.T, codeRaw string) links.Link {
 	require.NoError(t, err)
 
 	return link
+}
+
+func createValidVisit(t *testing.T, linkID int64) links.Visit {
+	visit, err := links.NewVisit(
+		linkID,
+		"1.2.3.4",
+		"",
+		"",
+		302,
+	)
+	require.NoError(t, err)
+
+	return visit
+}
+
+func commonResolveLinkParams(codeRaw string) ResolveLinkParams {
+	return ResolveLinkParams{
+		Code:   codeRaw,
+		IP:     "1.2.3.4",
+		Status: 302,
+	}
 }
