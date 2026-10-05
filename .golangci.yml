@@ -81,6 +81,10 @@ linters:
             - linters:
                   - forcetypeassert
               path: ".+testing.go$"
+            - linters:
+                  - goconst
+              path: "internal/links/application/postgres/.*.go" 
+              text: "string `.+ (ASC|DESC)` has.+"
 
 formatters:
     enable:
