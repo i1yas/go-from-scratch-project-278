@@ -77,7 +77,7 @@ func (s *LinksStore) GetLinks(ctx context.Context, params application.GetLinksPa
 
 		link, err := convertToLink(i)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", application.ErrInvalidStoreValue, err)
+			return nil, err
 		}
 
 		items = append(items, link)
