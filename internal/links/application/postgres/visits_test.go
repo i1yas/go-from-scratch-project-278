@@ -84,6 +84,18 @@ func TestGetVisitsSort(t *testing.T) {
 			wantItems: []int64{15, 14, 13, 12},
 		},
 		{
+			name:      "sort by link_id ASC",
+			sortBy:    "link_id",
+			order:     "ASC",
+			wantItems: []int64{1, 10, 4, 15},
+		},
+		{
+			name:      "sort by link_id DESC",
+			sortBy:    "link_id",
+			order:     "DESC",
+			wantItems: []int64{14, 3, 6, 8},
+		},
+		{
 			name:      "sort IP ASC",
 			sortBy:    "ip",
 			order:     "ASC",
@@ -106,6 +118,42 @@ func TestGetVisitsSort(t *testing.T) {
 			sortBy:    "referer",
 			order:     "DESC",
 			wantItems: []int64{11, 10, 4, 6},
+		},
+		{
+			name:      "sort by user_agent ASC",
+			sortBy:    "user_agent",
+			order:     "ASC",
+			wantItems: []int64{4, 7, 12, 14},
+		},
+		{
+			name:      "sort by user_agent DESC",
+			sortBy:    "user_agent",
+			order:     "DESC",
+			wantItems: []int64{1, 2, 3, 5},
+		},
+		{
+			name:      "sort by status ASC",
+			sortBy:    "status",
+			order:     "ASC",
+			wantItems: []int64{1, 2, 3, 4},
+		},
+		{
+			name:      "sort by status DESC",
+			sortBy:    "status",
+			order:     "DESC",
+			wantItems: []int64{5, 6, 9, 13},
+		},
+		{
+			name:      "sort by created_at ASC",
+			sortBy:    "created_at",
+			order:     "ASC",
+			wantItems: []int64{6, 12, 7, 2},
+		},
+		{
+			name:      "sort by created_at DESC",
+			sortBy:    "created_at",
+			order:     "DESC",
+			wantItems: []int64{14, 9, 4, 10},
 		},
 	}
 
@@ -130,6 +178,11 @@ func TestGetVisitsSort(t *testing.T) {
 					Sort:  sort,
 				})
 				require.NoError(t, err)
+
+				// if tc.sortBy == "link_id" {
+				// 	fmt.Printf("sort=%v, got=%v\n", sort, got)
+				// 	t.Fatal("DEBUG")
+				// }
 
 				require.Equal(t, len(tc.wantItems), len(got))
 				require.Equal(t, tc.wantItems, visitsIDs(got))
