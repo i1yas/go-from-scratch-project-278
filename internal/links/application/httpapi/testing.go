@@ -52,11 +52,11 @@ func (s *fakeLinkService) ResolveLink(ctx context.Context, params application.Re
 	return args.Get(0).(links.URL), args.Error(1)
 }
 
-type fakeVisitsHandler struct {
+type fakeVisitsService struct {
 	mock.Mock
 }
 
-func (s *fakeVisitsHandler) GetVisits(
+func (s *fakeVisitsService) GetVisits(
 	ctx context.Context, params application.GetVisitsParams,
 ) (application.VisitsResult, error) {
 	args := s.Called(ctx, params)
@@ -73,7 +73,7 @@ func testingBaseURL(t *testing.T) links.URL {
 func setupTestRouter(
 	t *testing.T,
 	linksSvc *fakeLinkService,
-	visitsSvc *fakeVisitsHandler,
+	visitsSvc *fakeVisitsService,
 ) *gin.Engine {
 	baseURL := testingBaseURL(t)
 	linksHandler := NewLinksHandler(linksSvc, baseURL)

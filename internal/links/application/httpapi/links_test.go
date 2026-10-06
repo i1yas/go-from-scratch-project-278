@@ -97,7 +97,7 @@ func TestGetLinkByID(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			linksSvc := new(fakeLinkService)
-			router := setupTestRouter(t, linksSvc, &fakeVisitsHandler{})
+			router := setupTestRouter(t, linksSvc, &fakeVisitsService{})
 
 			tc.setup(linksSvc)
 
@@ -264,7 +264,7 @@ func TestGetLinks(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			linksSvc := new(fakeLinkService)
-			router := setupTestRouter(t, linksSvc, &fakeVisitsHandler{})
+			router := setupTestRouter(t, linksSvc, &fakeVisitsService{})
 
 			tc.setup(linksSvc)
 
@@ -419,7 +419,7 @@ func TestCreateLink(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			linksSvc := new(fakeLinkService)
-			router := setupTestRouter(t, linksSvc, &fakeVisitsHandler{})
+			router := setupTestRouter(t, linksSvc, &fakeVisitsService{})
 
 			tc.setup(linksSvc)
 
@@ -581,7 +581,7 @@ func TestUpdateLink(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			linksSvc := new(fakeLinkService)
-			router := setupTestRouter(t, linksSvc, &fakeVisitsHandler{})
+			router := setupTestRouter(t, linksSvc, &fakeVisitsService{})
 
 			tc.setup(linksSvc)
 
@@ -651,7 +651,7 @@ func TestDeleteLink(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			linksSvc := new(fakeLinkService)
-			router := setupTestRouter(t, linksSvc, &fakeVisitsHandler{})
+			router := setupTestRouter(t, linksSvc, &fakeVisitsService{})
 
 			tc.setup(linksSvc)
 
@@ -719,7 +719,7 @@ func TestResolveLink(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			linksSvc := new(fakeLinkService)
-			router := setupTestRouter(t, linksSvc, &fakeVisitsHandler{})
+			router := setupTestRouter(t, linksSvc, &fakeVisitsService{})
 
 			tc.setup(linksSvc)
 
