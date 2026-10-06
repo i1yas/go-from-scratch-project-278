@@ -65,7 +65,7 @@ type visitResponse struct {
 	ID        int64  `json:"id"`
 	LinkID    int64  `json:"link_id"`
 	IP        string `json:"ip"`
-	Referer   string `json:"referer"`
+	Referer   string `json:"reffer"` // NOTE: client expects `reffer` with typo
 	UserAgent string `json:"user_agent"`
 	CreatedAt string `json:"created_at"`
 	Status    int    `json:"status"`
