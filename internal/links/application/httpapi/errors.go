@@ -83,17 +83,17 @@ var internalErrors = []error{
 	application.ErrInvalidStoreValue,
 }
 
-func handleError(ctx *gin.Context, err error) {
+func handleError(c *gin.Context, err error) {
 	for _, internalErr := range internalErrors {
 		if errors.Is(err, internalErr) {
-			ctx.Status(500)
+			c.Status(500)
 			return
 		}
 	}
 
 	for _, mappedErr := range errorsMappings {
 		if errors.Is(err, mappedErr.originalErr) {
-			ctx.JSON(mappedErr.status, mappedErr)
+			c.JSON(mappedErr.status, mappedErr)
 
 			return
 		}
@@ -101,12 +101,12 @@ func handleError(ctx *gin.Context, err error) {
 
 	var linkErr *links.LinkError
 	if errors.As(err, &linkErr) {
-		ctx.JSON(http.StatusUnprocessableEntity, errorResponse{
+		c.JSON(http.StatusUnprocessableEntity, errorResponse{
 			Errors: linkErr.Fields,
 		})
 
 		return
 	}
 
-	ctx.Status(500)
+	c.Status(500)
 }
