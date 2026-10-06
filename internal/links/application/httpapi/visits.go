@@ -10,17 +10,18 @@ import (
 	"hexleturlshort/internal/links/application"
 )
 
-// LinksHandler handles HTTP requests related to links
+// VisitsHandler handles HTTP requests related to links
 type VisitsHandler struct {
 	baseURL links.URL
 	s       visitsService
 }
 
-// NewLinksHandler creates LinksHandler
+// NewVisitsHandler creates VisitsHandler
 func NewVisitsHandler(service visitsService, baseURL links.URL) *VisitsHandler {
 	return &VisitsHandler{s: service, baseURL: baseURL}
 }
 
+// GetVisits lists recorded visits
 func (h *VisitsHandler) GetVisits(ctx *gin.Context) {
 	rang, err := parseRange(ctx.Query("range"), application.Range{From: 0, To: 4})
 	if err != nil {
