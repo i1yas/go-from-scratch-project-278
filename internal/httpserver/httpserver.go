@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"hexleturlshort/internal/config"
+	"hexleturlshort/internal/httpserver/middleware"
 )
 
 // Server container http.Server and gin router
@@ -17,11 +18,13 @@ type Server struct {
 }
 
 // NewRouter generates configured gin router
-func NewRouter() *gin.Engine {
+func NewRouter(env config.Environment) *gin.Engine {
 	r := gin.Default()
 
 	r.TrustedPlatform = gin.PlatformCloudflare
 
+	r.Use(middleware.CORS(env))
+	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
 	return r

@@ -54,7 +54,7 @@ func Run(ctx context.Context) error {
 	linksHandler := httpapi.NewLinksHandler(service, baseURL)
 	visitsHandler := httpapi.NewVisitsHandler(service, baseURL)
 
-	router := httpserver.NewRouter()
+	router := httpserver.NewRouter(cfg.Env)
 	server := httpserver.NewServer(router, cfg.HTTP)
 
 	go func() {
