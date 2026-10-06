@@ -29,6 +29,7 @@ func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
 	r.Use(
 		gin.Recovery(),
 		middleware.Slog(logger),
+		middleware.Timeout(),
 		middleware.CORS(env),
 	)
 
