@@ -737,6 +737,7 @@ func TestResolveLink(t *testing.T) {
 			tc.setup(linksSvc)
 
 			w := httptest.NewRecorder()
+
 			req, err := http.NewRequest("GET", tc.url, nil)
 			if tc.headers != nil {
 				req.Header = *tc.headers
