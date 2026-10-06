@@ -2,12 +2,7 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"net"
-	"net/netip"
-
-	"github.com/sqlc-dev/pqtype"
 
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
@@ -67,13 +62,7 @@ func (s *VisitsStore) GetVisits(
 		LIMIT $1 OFFSET $2;
 	`, sortOrder)
 
-	// NOTE: upper bound is inclusive
-	limit := params.Range.To + 1 - params.Range.From
-
-	offset := max(0, params.Range.From)
-	if params.Range.From == params.Range.To {
-		limit = 0
-	}
+	limit, offset := convertRangeToLimitOffset(params.Range)
 
 	rows, err := s.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
@@ -163,21 +152,4 @@ func convertToVisit(dbVisit sqlcgen.Visit) (links.Visit, error) {
 	visit.CreatedAt = dbVisit.CreatedAt
 
 	return visit, nil
-}
-
-func nullString(s string) sql.NullString {
-	return sql.NullString{
-		String: s,
-		Valid:  s != "",
-	}
-}
-
-func addrToPgInet(addr netip.Addr) pqtype.Inet {
-	return pqtype.Inet{
-		IPNet: net.IPNet{
-			IP:   net.IP(addr.AsSlice()),
-			Mask: net.IPMask{0, 0, 0, 0},
-		},
-		Valid: true,
-	}
 }

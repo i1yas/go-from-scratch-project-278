@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgconn"
-
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
 	"hexleturlshort/internal/links/application/postgres/sqlcgen"
@@ -52,13 +50,7 @@ func (s *LinksStore) GetLinks(ctx context.Context, params application.GetLinksPa
 		LIMIT $1 OFFSET $2;
 	`, sortOrder)
 
-	// NOTE: upper bound is inclusive
-	limit := params.Range.To + 1 - params.Range.From
-
-	offset := params.Range.From
-	if params.Range.From == params.Range.To {
-		limit = 0
-	}
+	limit, offset := convertRangeToLimitOffset(params.Range)
 
 	rows, err := s.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
@@ -194,13 +186,4 @@ func convertToLink(dbLink sqlcgen.Link) (links.Link, error) {
 	link.ID = dbLink.ID
 
 	return link, nil
-}
-
-func isConstraintError(err error, constraintName string) bool {
-	pgErr, ok := errors.AsType[*pgconn.PgError](err)
-	if !ok {
-		return false
-	}
-
-	return pgErr.ConstraintName == constraintName
 }
