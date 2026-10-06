@@ -34,7 +34,7 @@ frontend-setup:
 	npm install
 
 dev:
-	npx concurrently --kill-others "npx start-hexlet-url-shortener-frontend" "go run ./main.go"
+	npx concurrently --names="frontend,backend" --kill-others "npx start-hexlet-url-shortener-frontend" "go run ./main.go"
 
 dev-frontend:
 	npm exec start-hexlet-url-shortener-frontend
