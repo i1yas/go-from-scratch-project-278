@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
@@ -105,6 +106,38 @@ func createLinks(t *testing.T, ids []int64) []links.Link {
 		require.NoError(t, err)
 
 		result[i] = link
+	}
+
+	return result
+}
+
+func createVisits(t *testing.T, ids []int64) []links.Visit {
+	result := make([]links.Visit, len(ids))
+
+	timeOffset, err := time.Parse(time.RFC3339, "2026-06-10T12:00:00Z")
+	require.NoError(t, err)
+
+	for i, id := range ids {
+		ip := fmt.Sprintf("192.168.0.%d", id)
+		if id == 10 {
+			ip = "255.0.0.1"
+		}
+
+		visit, err := links.NewVisit(
+			1,
+			ip,
+			fmt.Sprintf("http://website.com/page-%d", id),
+			fmt.Sprintf("user-agent-%d", id),
+			302,
+		)
+		require.NoError(t, err)
+
+		visit.ID = id
+		visit.CreatedAt = timeOffset.Add(
+			time.Minute * time.Duration(id),
+		)
+
+		result[i] = visit
 	}
 
 	return result

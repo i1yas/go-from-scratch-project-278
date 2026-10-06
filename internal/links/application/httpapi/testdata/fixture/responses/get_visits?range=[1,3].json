@@ -1,0 +1,29 @@
+[
+  {
+    "id": 2,
+    "link_id": 1,
+    "ip": "192.168.0.2",
+    "referer": "http://website.com/page-2",
+    "created_at": "2026-06-10T12:02:00Z",
+    "status": 302,
+    "user_agent": "user-agent-2"
+  },
+  {
+    "id": 3,
+    "link_id": 1,
+    "ip": "192.168.0.3",
+    "referer": "http://website.com/page-3",
+    "created_at": "2026-06-10T12:03:00Z",
+    "status": 302,
+    "user_agent": "user-agent-3"
+  },
+  {
+    "id": 4,
+    "link_id": 1,
+    "ip": "192.168.0.4",
+    "referer": "http://website.com/page-4",
+    "created_at": "2026-06-10T12:04:00Z",
+    "status": 302,
+    "user_agent": "user-agent-4"
+  }
+]
