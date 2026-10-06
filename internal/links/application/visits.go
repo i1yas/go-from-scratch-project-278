@@ -31,6 +31,8 @@ func (s *Service) GetVisits(ctx context.Context, params GetVisitsParams) (Visits
 		}, nil
 	}
 
+	mapVisitsSortToStore(&params.Sort)
+
 	visits, err := s.visits.GetVisits(ctx, params)
 	if err != nil {
 		return VisitsResult{}, err
@@ -40,4 +42,14 @@ func (s *Service) GetVisits(ctx context.Context, params GetVisitsParams) (Visits
 		Items: visits,
 		Total: totalCount,
 	}, nil
+}
+
+func mapVisitsSortToStore(sort *SortOrder) {
+	if sort == nil {
+		return
+	}
+
+	if sort.SortBy == "reffer" {
+		sort.SortBy = "referer"
+	}
 }
