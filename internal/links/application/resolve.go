@@ -7,6 +7,7 @@ import (
 	"hexleturlshort/internal/links"
 )
 
+// ResolveLinkParams contains information about link visit
 type ResolveLinkParams struct {
 	Code      string
 	IP        string
