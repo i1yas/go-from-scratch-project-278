@@ -54,8 +54,8 @@ func mapLinksSortToStore(sort *SortOrder) {
 		return
 	}
 
-	switch sort.sortBy {
+	switch sort.SortBy {
 	case "short_url", "short_name":
-		sort.sortBy = "shortcode"
+		sort.SortBy = "shortcode"
 	}
 }

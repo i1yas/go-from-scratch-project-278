@@ -15,8 +15,8 @@ const (
 
 // SortOrder contains field and order for sorting list
 type SortOrder struct {
-	sortBy string
-	order  string
+	SortBy string
+	Order  string
 }
 
 var (
@@ -38,12 +38,12 @@ func NewSortOrder(sortBy, order string) (SortOrder, error) {
 	}
 
 	return SortOrder{
-		sortBy: sortBy,
-		order:  order,
+		SortBy: sortBy,
+		Order:  order,
 	}, nil
 }
 
 func (so *SortOrder) String() string {
-	str := fmt.Sprintf("%s %s", so.sortBy, so.order)
+	str := fmt.Sprintf("%s %s", so.SortBy, so.Order)
 	return strings.TrimSpace(str)
 }
