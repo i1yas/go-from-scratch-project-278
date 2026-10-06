@@ -63,3 +63,62 @@ func TestParseRange(t *testing.T) {
 		})
 	}
 }
+
+func TestParseSort(t *testing.T) {
+	fallback := application.SortOrder{
+		SortBy: "id",
+		Order:  application.OrderASC,
+	}
+
+	cases := []struct {
+		name  string
+		input string
+		want  application.SortOrder
+		err   error
+	}{
+		{
+			name:  "valid sort ASC",
+			input: `["name","ASC"]`,
+			want:  application.SortOrder{SortBy: "name", Order: application.OrderASC},
+		},
+		{
+			name:  "valid sort DESC",
+			input: `["name","DESC"]`,
+			want:  application.SortOrder{SortBy: "name", Order: application.OrderDESC},
+		},
+		{
+			name:  "valid sort DESC with spaces",
+			input: `[ "name" , "DESC" ]`,
+			want:  application.SortOrder{SortBy: "name", Order: application.OrderDESC},
+		},
+		{
+			name:  "fallback on empty input",
+			input: "",
+			want:  fallback,
+		},
+		{
+			name:  "skip extra elements",
+			input: `["name","DESC","extra"]`,
+			want:  application.SortOrder{SortBy: "name", Order: application.OrderDESC},
+		},
+		{
+			name:  "invalid order",
+			input: `["name","UNKNOWN"]`,
+			err:   application.ErrInvalidSortOrder,
+		},
+		{
+			name:  "invalid format",
+			input: "id,ASC",
+			err:   ErrInvalidQuery,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parseSort(tc.input, fallback)
+
+			require.ErrorIs(t, err, tc.err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
