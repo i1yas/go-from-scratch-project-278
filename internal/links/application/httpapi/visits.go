@@ -22,19 +22,21 @@ func NewVisitsHandler(service visitsService, baseURL links.URL) *VisitsHandler {
 }
 
 // GetVisits lists recorded visits
-func (h *VisitsHandler) GetVisits(ctx *gin.Context) {
-	rang, err := parseRange(ctx.Query("range"), application.Range{From: 0, To: 4})
+func (h *VisitsHandler) GetVisits(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	rang, err := parseRange(c.Query("range"), application.Range{From: 0, To: 4})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
-	sort, err := parseSort(ctx.Query("sort"), application.SortOrder{
+	sort, err := parseSort(c.Query("sort"), application.SortOrder{
 		SortBy: "id",
 		Order:  application.OrderASC,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
@@ -43,7 +45,7 @@ func (h *VisitsHandler) GetVisits(ctx *gin.Context) {
 		Sort:  sort,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
@@ -53,13 +55,13 @@ func (h *VisitsHandler) GetVisits(ctx *gin.Context) {
 		response[i] = convertToVisitResponse(visit)
 	}
 
-	ctx.Header("Content-Range", formatContentRangeHeader(contentRangeParams{
+	c.Header("Content-Range", formatContentRangeHeader(contentRangeParams{
 		itemName:   "visits",
 		itemsRange: rang,
 		itemsCount: len(result.Items),
 		totalCount: result.Total,
 	}))
-	ctx.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, response)
 }
 
 type visitResponse struct {

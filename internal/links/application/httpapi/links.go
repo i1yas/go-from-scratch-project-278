@@ -23,22 +23,24 @@ func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
 }
 
 // GetLinks handles request for listing links
-func (h *LinksHandler) GetLinks(ctx *gin.Context) {
-	linksRange, err := parseRange(ctx.Query("range"), application.Range{
+func (h *LinksHandler) GetLinks(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	linksRange, err := parseRange(c.Query("range"), application.Range{
 		From: 0,
 		To:   4,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
-	sort, err := parseSort(ctx.Query("sort"), application.SortOrder{
+	sort, err := parseSort(c.Query("sort"), application.SortOrder{
 		SortBy: "id",
 		Order:  application.OrderASC,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
@@ -47,7 +49,7 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 		Sort:  sort,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
@@ -57,20 +59,20 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 	for i, link := range linkItems {
 		respItem, err := convertToLinkResponse(link, h.baseURL)
 		if err != nil {
-			handleError(ctx, err)
+			handleError(c, err)
 			return
 		}
 
 		result[i] = respItem
 	}
 
-	ctx.Header("Content-Range", formatContentRangeHeader(contentRangeParams{
+	c.Header("Content-Range", formatContentRangeHeader(contentRangeParams{
 		itemName:   "links",
 		itemsRange: linksRange,
 		itemsCount: len(result),
 		totalCount: linksResult.Total,
 	}))
-	ctx.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, result)
 }
 
 type createLinkRequest struct {
@@ -79,11 +81,13 @@ type createLinkRequest struct {
 }
 
 // CreateLink creates link
-func (h *LinksHandler) CreateLink(ctx *gin.Context) {
+func (h *LinksHandler) CreateLink(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	var request createLinkRequest
 
-	if err := ctx.ShouldBindBodyWithJSON(&request); err != nil {
-		handleError(ctx, ErrInvalidJSON)
+	if err := c.ShouldBindBodyWithJSON(&request); err != nil {
+		handleError(c, ErrInvalidJSON)
 		return
 	}
 
@@ -92,42 +96,44 @@ func (h *LinksHandler) CreateLink(ctx *gin.Context) {
 		ShortCode:   request.ShortName,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
 	response, err := convertToLinkResponse(link, h.baseURL)
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // GetLinkByID handles request for getting link by id
-func (h *LinksHandler) GetLinkByID(ctx *gin.Context) {
-	idRaw := ctx.Param("id")
+func (h *LinksHandler) GetLinkByID(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idRaw := c.Param("id")
 
 	id, err := strconv.ParseInt(idRaw, 10, 64)
 	if err != nil {
-		handleError(ctx, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
 		return
 	}
 
 	link, err := h.s.GetLinkByID(ctx, id)
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
 	resp, err := convertToLinkResponse(link, h.baseURL)
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, resp)
 }
 
 type updateLinkRequest struct {
@@ -136,19 +142,21 @@ type updateLinkRequest struct {
 }
 
 // UpdateLink updates link
-func (h *LinksHandler) UpdateLink(ctx *gin.Context) {
-	idRaw := ctx.Param("id")
+func (h *LinksHandler) UpdateLink(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idRaw := c.Param("id")
 
 	id, err := strconv.ParseInt(idRaw, 10, 64)
 	if err != nil {
-		handleError(ctx, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
 		return
 	}
 
 	var request updateLinkRequest
 
-	if err := ctx.ShouldBindBodyWithJSON(&request); err != nil {
-		handleError(ctx, ErrInvalidJSON)
+	if err := c.ShouldBindBodyWithJSON(&request); err != nil {
+		handleError(c, ErrInvalidJSON)
 		return
 	}
 
@@ -158,56 +166,60 @@ func (h *LinksHandler) UpdateLink(ctx *gin.Context) {
 		ShortCode:   request.ShortName,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
 	response, err := convertToLinkResponse(link, h.baseURL)
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // DeleteLink deletes link
-func (h *LinksHandler) DeleteLink(ctx *gin.Context) {
-	idRaw := ctx.Param("id")
+func (h *LinksHandler) DeleteLink(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idRaw := c.Param("id")
 
 	id, err := strconv.ParseInt(idRaw, 10, 64)
 	if err != nil {
-		handleError(ctx, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
 		return
 	}
 
 	if err := h.s.DeleteLink(ctx, id); err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
 // ResolveLink finds link by code and redirects to original url
-func (h *LinksHandler) ResolveLink(ctx *gin.Context) {
-	code := ctx.Param("code")
+func (h *LinksHandler) ResolveLink(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	code := c.Param("code")
 
 	status := http.StatusFound
 
 	originalURL, err := h.s.ResolveLink(ctx, application.ResolveLinkParams{
 		Code:      code,
-		IP:        ctx.ClientIP(),
-		Referer:   ctx.Request.Referer(),
-		UserAgent: ctx.Request.UserAgent(),
+		IP:        c.ClientIP(),
+		Referer:   c.Request.Referer(),
+		UserAgent: c.Request.UserAgent(),
 		Status:    status,
 	})
 	if err != nil {
-		handleError(ctx, err)
+		handleError(c, err)
 		return
 	}
 
-	ctx.Redirect(status, string(originalURL))
+	c.Redirect(status, string(originalURL))
 }
 
 type linkResponse struct {
