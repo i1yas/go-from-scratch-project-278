@@ -33,14 +33,10 @@ func (h *LinksHandler) GetLinks(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: sort should be optional here, store should choose default one
-	fallbackSort, err := application.NewSortOrder("id", application.OrderASC)
-	if err != nil {
-		handleError(ctx, err)
-		return
-	}
-
-	sort, err := parseSort(ctx.Query("sort"), fallbackSort)
+	sort, err := parseSort(ctx.Query("sort"), application.SortOrder{
+		SortBy: "id",
+		Order:  application.OrderASC,
+	})
 	if err != nil {
 		handleError(ctx, err)
 		return
