@@ -59,8 +59,6 @@ func (h *VisitsHandler) GetVisits(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-const timestampResponseFormat = "2006-01-02T15:04:05Z"
-
 type visitResponse struct {
 	ID        int64  `json:"id"`
 	LinkID    int64  `json:"link_id"`
@@ -78,7 +76,7 @@ func convertToVisitResponse(visit links.Visit) visitResponse {
 		IP:        visit.IP.String(),
 		Referer:   visit.Referer,
 		UserAgent: visit.UserAgent,
-		CreatedAt: visit.CreatedAt.Format(timestampResponseFormat),
+		CreatedAt: visit.CreatedAt.UTC().Format(time.RFC3339),
 		Status:    visit.Status,
 	}
 }
