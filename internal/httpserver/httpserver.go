@@ -3,6 +3,7 @@ package httpserver
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,13 +19,13 @@ type Server struct {
 }
 
 // NewRouter generates configured gin router
-func NewRouter(env config.Environment) *gin.Engine {
-	r := gin.Default()
+func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
+	r := gin.New()
 
 	r.TrustedPlatform = gin.PlatformCloudflare
 
 	r.Use(middleware.CORS(env))
-	r.Use(gin.Logger())
+	r.Use(middleware.Slog(logger))
 	r.Use(gin.Recovery())
 
 	return r

@@ -15,6 +15,7 @@ import (
 	"hexleturlshort/internal/links/application/httpapi"
 	"hexleturlshort/internal/links/application/postgres"
 	"hexleturlshort/internal/links/application/shortcodegen"
+	"hexleturlshort/internal/logging"
 )
 
 var (
@@ -54,7 +55,9 @@ func Run(ctx context.Context) error {
 	linksHandler := httpapi.NewLinksHandler(service, baseURL)
 	visitsHandler := httpapi.NewVisitsHandler(service, baseURL)
 
-	router := httpserver.NewRouter(cfg.Env)
+	logger := logging.NewSlogLogger(cfg.Env)
+
+	router := httpserver.NewRouter(cfg.Env, logger)
 	server := httpserver.NewServer(router, cfg.HTTP)
 
 	go func() {
