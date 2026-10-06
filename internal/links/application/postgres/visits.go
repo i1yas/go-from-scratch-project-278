@@ -27,12 +27,20 @@ func NewVisitsStore(db sqlcgen.DBTX) *VisitsStore {
 }
 
 var getVisitsSupportedSort = map[string]string{
-	"id ASC":       "id ASC",
-	"id DESC":      "id DESC",
-	"ip ASC":       "inet(ip) ASC, id ASC",
-	"ip DESC":      "inet(ip) DESC, id ASC",
-	"referer ASC":  "referer ASC NULLS FIRST, id ASC",
-	"referer DESC": "referer DESC NULLS LAST, id ASC",
+	"id ASC":          "id ASC",
+	"id DESC":         "id DESC",
+	"link_id ASC":     "link_id ASC, id ASC",
+	"link_id DESC":    "link_id DESC, id ASC",
+	"ip ASC":          "inet(ip) ASC, id ASC",
+	"ip DESC":         "inet(ip) DESC, id ASC",
+	"referer ASC":     "referer ASC NULLS FIRST, id ASC",
+	"referer DESC":    "referer DESC NULLS LAST, id ASC",
+	"user_agent ASC":  "user_agent ASC NULLS FIRST, id ASC",
+	"user_agent DESC": "user_agent DESC NULLS LAST, id ASC",
+	"created_at ASC":  "created_at ASC, id ASC",
+	"created_at DESC": "created_at DESC, id ASC",
+	"status ASC":      "status ASC, id ASC",
+	"status DESC":     "status DESC, id ASC",
 }
 
 // GetVisits loads visits from store
