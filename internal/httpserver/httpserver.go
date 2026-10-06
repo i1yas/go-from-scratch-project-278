@@ -20,6 +20,8 @@ type Server struct {
 
 // NewRouter generates configured gin router
 func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
+	setGinMode(env)
+
 	r := gin.New()
 
 	r.TrustedPlatform = gin.PlatformCloudflare
@@ -59,4 +61,11 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.srv.Shutdown(ctx)
 }
 
-// TODO: configure properly
+func setGinMode(env config.Environment) {
+	switch env {
+	case config.EnvProduction:
+		gin.SetMode(gin.ReleaseMode)
+	default:
+		gin.SetMode(gin.DebugMode)
+	}
+}
