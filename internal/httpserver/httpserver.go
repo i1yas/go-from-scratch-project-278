@@ -20,6 +20,8 @@ type Server struct {
 func NewRouter() *gin.Engine {
 	r := gin.Default()
 
+	r.TrustedPlatform = gin.PlatformCloudflare
+
 	r.Use(gin.Recovery())
 
 	return r
