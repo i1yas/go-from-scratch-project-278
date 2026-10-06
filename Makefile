@@ -2,10 +2,10 @@ BINARY := bin/urlshort
 GOOSE := go tool goose -dir ./db/migrations postgres "${DATABASE_URL}"
 
 build:
-	go build -o $(BINARY) ./cmd/api/main.go
+	go build -o $(BINARY) ./main.go
 
 run:
-	go run cmd/api/main.go
+	go run ./main.go
 	
 clean:
 	rm $(BINARY) coverage.out
@@ -34,7 +34,7 @@ frontend-setup:
 	npm install
 
 dev:
-	npx concurrently --kill-others "npx start-hexlet-url-shortener-frontend" "go run ./cmd/api/main.go"
+	npx concurrently --kill-others "npx start-hexlet-url-shortener-frontend" "go run ./main.go"
 
 dev-frontend:
 	npm exec start-hexlet-url-shortener-frontend
