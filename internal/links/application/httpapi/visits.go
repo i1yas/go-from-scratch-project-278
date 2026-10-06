@@ -1,11 +1,13 @@
 package httpapi
 
 import (
-	"hexleturlshort/internal/links"
-	"hexleturlshort/internal/links/application"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
 )
 
 // LinksHandler handles HTTP requests related to links
@@ -64,7 +66,7 @@ type visitResponse struct {
 	LinkID    int64  `json:"link_id"`
 	IP        string `json:"ip"`
 	Referer   string `json:"referer"`
-	UserAgent string `json:"user-agent"`
+	UserAgent string `json:"user_agent"`
 	CreatedAt string `json:"created_at"`
 	Status    int    `json:"status"`
 }
