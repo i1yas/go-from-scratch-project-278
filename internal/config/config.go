@@ -7,6 +7,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Environment of application
+type Environment string
+
+const (
+	// EnvProduction is production environment
+	EnvProduction = Environment("production")
+	// EnvDevelopment is development environment
+	EnvDevelopment = Environment("development")
+)
+
 // App is application specific config
 type App struct {
 	BaseURL string
@@ -24,6 +34,7 @@ type HTTP struct {
 
 // Config contains app configuration
 type Config struct {
+	Env      Environment
 	App      App
 	Database Database
 	HTTP     HTTP
@@ -39,12 +50,24 @@ func ReadFromEnv() (Config, error) {
 	}
 
 	cfg := Config{
+		Env:      readEnvConfig(EnvDevelopment),
 		App:      readAppConfig(),
 		Database: readDBConfig(),
 		HTTP:     readHTTPConfig(),
 	}
 
 	return cfg, nil
+}
+
+func readEnvConfig(fallback Environment) Environment {
+	env := Environment(os.Getenv("ENV"))
+
+	switch env {
+	case EnvDevelopment, EnvProduction:
+		return env
+	default:
+		return fallback
+	}
 }
 
 func readAppConfig() App {
