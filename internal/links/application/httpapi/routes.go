@@ -6,6 +6,7 @@ import "github.com/gin-gonic/gin"
 func RegisterRoutes(
 	router gin.IRouter,
 	links *LinksHandler,
+	visits *VisitsHandler,
 ) {
 	rootAPI := router.Group("/api")
 
@@ -17,6 +18,8 @@ func RegisterRoutes(
 	linkByIDAPI.GET("", links.GetLinkByID)
 	linkByIDAPI.PUT("", links.UpdateLink)
 	linkByIDAPI.DELETE("", links.DeleteLink)
+
+	rootAPI.GET("/link_visits", visits.GetVisits)
 
 	router.GET("/r/:code", links.ResolveLink)
 }

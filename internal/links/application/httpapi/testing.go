@@ -52,6 +52,17 @@ func (s *fakeLinkService) ResolveLink(ctx context.Context, params application.Re
 	return args.Get(0).(links.URL), args.Error(1)
 }
 
+type fakeVisitsHandler struct {
+	mock.Mock
+}
+
+func (s *fakeVisitsHandler) GetVisits(
+	ctx context.Context, params application.GetVisitsParams,
+) (application.VisitsResult, error) {
+	args := s.Called(ctx, params)
+	return args.Get(0).(application.VisitsResult), args.Error(1)
+}
+
 func testingBaseURL(t *testing.T) links.URL {
 	baseURL, err := links.NewURL("http://short")
 	require.NoError(t, err)
@@ -59,12 +70,17 @@ func testingBaseURL(t *testing.T) links.URL {
 	return baseURL
 }
 
-func setupTestRouter(t *testing.T, linksSvc *fakeLinkService) *gin.Engine {
+func setupTestRouter(
+	t *testing.T,
+	linksSvc *fakeLinkService,
+	visitsSvc *fakeVisitsHandler,
+) *gin.Engine {
 	baseURL := testingBaseURL(t)
-	handler := NewLinksHandler(linksSvc, baseURL)
+	linksHandler := NewLinksHandler(linksSvc, baseURL)
+	visitsHandler := NewVisitsHandler(visitsSvc, baseURL)
 	router := gin.New()
 
-	RegisterRoutes(router, handler)
+	RegisterRoutes(router, linksHandler, visitsHandler)
 
 	return router
 }
