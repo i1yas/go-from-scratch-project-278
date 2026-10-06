@@ -26,9 +26,11 @@ func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
 
 	r.TrustedPlatform = gin.PlatformCloudflare
 
-	r.Use(middleware.CORS(env))
-	r.Use(middleware.Slog(logger))
-	r.Use(gin.Recovery())
+	r.Use(
+		gin.Recovery(),
+		middleware.Slog(logger),
+		middleware.CORS(env),
+	)
 
 	return r
 }
