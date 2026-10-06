@@ -678,6 +678,8 @@ func TestResolveLink(t *testing.T) {
 	cases := []struct {
 		name         string
 		url          string
+		headers      *http.Header
+		remoteAddr   string
 		setup        func(svg *fakeLinkService)
 		wantStatus   int
 		wantBody     string
@@ -686,9 +688,20 @@ func TestResolveLink(t *testing.T) {
 		{
 			name: "resolve successful",
 			url:  "/r/mylink",
+			headers: &http.Header{
+				"User-Agent": []string{"test-user-agent"},
+				"Referer":    []string{"http://website.com"},
+			},
+			remoteAddr: "1.2.3.4:54321",
 			setup: func(svc *fakeLinkService) {
 				svc.
-					On("ResolveLink", mock.Anything, "mylink").
+					On("ResolveLink", mock.Anything, application.ResolveLinkParams{
+						Code:      "mylink",
+						UserAgent: "test-user-agent",
+						Referer:   "http://website.com",
+						IP:        "1.2.3.4",
+						Status:    302,
+					}).
 					Return(originalURL, nil)
 			},
 			wantStatus:   302,
@@ -699,7 +712,7 @@ func TestResolveLink(t *testing.T) {
 			url:  "/r/gone",
 			setup: func(svc *fakeLinkService) {
 				svc.
-					On("ResolveLink", mock.Anything, "gone").
+					On("ResolveLink", mock.Anything, mock.Anything).
 					Return(links.URL(""), application.ErrLinkNotFound)
 			},
 			wantStatus: 404,
@@ -725,6 +738,12 @@ func TestResolveLink(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", tc.url, nil)
+			if tc.headers != nil {
+				req.Header = *tc.headers
+			}
+
+			req.RemoteAddr = tc.remoteAddr
+
 			require.NoError(t, err)
 			router.ServeHTTP(w, req)
 

@@ -49,7 +49,7 @@ func (s *fakeLinkService) DeleteLink(ctx context.Context, id int64) error {
 }
 
 func (s *fakeLinkService) ResolveLink(ctx context.Context, params application.ResolveLinkParams) (links.URL, error) {
-	args := s.Called(ctx, params.Code)
+	args := s.Called(ctx, params)
 	return args.Get(0).(links.URL), args.Error(1)
 }
 
