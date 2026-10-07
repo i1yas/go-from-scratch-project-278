@@ -1,6 +1,8 @@
 package httpapi
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 // RegisterRoutes register routes with handlers
 func RegisterRoutes(
@@ -22,4 +24,6 @@ func RegisterRoutes(
 	rootAPI.GET("/link_visits", visits.GetVisits)
 
 	router.GET("/r/:code", links.ResolveLink)
+
+	router.GET("/ping", handlePing)
 }
