@@ -317,7 +317,6 @@ func TestCreateLink(t *testing.T) {
 					)
 			},
 			wantStatus: 200,
-			// TODO: change return value according to spec
 			wantBody: `{
 				"id": 101,
 				"original_url": "http://domain101.com",
