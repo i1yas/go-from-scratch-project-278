@@ -297,7 +297,7 @@ func TestGetVisitsTotalCount(t *testing.T) {
 		})
 	})
 
-	t.Run("seeded", func(t *testing.T) {
+	t.Run("with visits", func(t *testing.T) {
 		db := setupTestDB(t)
 
 		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
