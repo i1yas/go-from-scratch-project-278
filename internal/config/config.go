@@ -32,12 +32,18 @@ type HTTP struct {
 	Addr string
 }
 
+// Sentry is sentry specific config
+type Sentry struct {
+	DSN string
+}
+
 // Config contains app configuration
 type Config struct {
 	Env      Environment
 	App      App
 	Database Database
 	HTTP     HTTP
+	Sentry   Sentry
 }
 
 // TODO: validate configs
@@ -54,6 +60,7 @@ func ReadFromEnv() (Config, error) {
 		App:      readAppConfig(),
 		Database: readDBConfig(),
 		HTTP:     readHTTPConfig(),
+		Sentry:   readSentryConfig(),
 	}
 
 	return cfg, nil
@@ -85,5 +92,11 @@ func readDBConfig() Database {
 func readHTTPConfig() HTTP {
 	return HTTP{
 		Addr: os.Getenv("HTTP_ADDR"),
+	}
+}
+
+func readSentryConfig() Sentry {
+	return Sentry{
+		DSN: os.Getenv("SENTRY_DSN"),
 	}
 }
