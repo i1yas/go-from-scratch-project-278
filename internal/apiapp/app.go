@@ -9,6 +9,7 @@ import (
 
 	"hexleturlshort/internal/config"
 	"hexleturlshort/internal/database"
+	"hexleturlshort/internal/errtrack"
 	"hexleturlshort/internal/httpserver"
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
@@ -22,6 +23,7 @@ var (
 	ErrFailedToReadConfigFromEnv = errors.New("failed to read config from environment")
 	ErrInvalidBaseURL            = errors.New("invalid base url")
 	ErrFailedToStartServer       = errors.New("failed to start server")
+	ErrFailedToInitSentry        = errors.New("failed to init sentry client")
 )
 
 // Run combines components in one application and runs it
@@ -56,6 +58,15 @@ func Run(ctx context.Context) error {
 	visitsHandler := httpapi.NewVisitsHandler(service, baseURL)
 
 	logger := logging.NewSlogLogger(cfg.Env)
+
+	err = errtrack.InitSentry(errtrack.InitSentryParams{
+		Env:    cfg.Env,
+		Cfg:    cfg.Sentry,
+		Logger: logger,
+	})
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrFailedToInitSentry, err)
+	}
 
 	router := httpserver.NewRouter(cfg.Env, logger)
 	server := httpserver.NewServer(router, cfg.HTTP)

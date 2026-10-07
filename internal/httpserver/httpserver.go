@@ -5,7 +5,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 
@@ -29,6 +31,11 @@ func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
 
 	r.Use(
 		gin.Recovery(),
+		sentrygin.New(sentrygin.Options{
+			Repanic:         true,
+			WaitForDelivery: false,
+			Timeout:         5 * time.Second,
+		}),
 		requestid.New(),
 		middleware.Slog(logger),
 		middleware.Timeout(),
