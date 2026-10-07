@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 
 	"hexleturlshort/internal/config"
@@ -28,6 +29,7 @@ func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
 
 	r.Use(
 		gin.Recovery(),
+		requestid.New(),
 		middleware.Slog(logger),
 		middleware.Timeout(),
 		middleware.CORS(env),

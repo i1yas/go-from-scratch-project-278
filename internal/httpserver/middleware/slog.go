@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,6 +16,7 @@ func Slog(logger *slog.Logger) gin.HandlerFunc {
 		c.Next()
 
 		logger.Info("request",
+			slog.String("request_id", requestid.Get(c)),
 			slog.String("method", c.Request.Method),
 			slog.String("path", c.Request.URL.Path),
 			slog.Int("status", c.Writer.Status()),
