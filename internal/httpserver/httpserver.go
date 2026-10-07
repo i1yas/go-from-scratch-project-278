@@ -8,7 +8,6 @@ import (
 	"time"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
-	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 
 	"hexleturlshort/internal/config"
@@ -36,7 +35,7 @@ func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
 			WaitForDelivery: false,
 			Timeout:         5 * time.Second,
 		}),
-		requestid.New(),
+		middleware.RequestID(),
 		middleware.Slog(logger),
 		middleware.Timeout(),
 		middleware.CORS(env),
