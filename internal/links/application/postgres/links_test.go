@@ -297,7 +297,35 @@ func TestGetLinksErrors(t *testing.T) {
 	})
 }
 
-// TODO: test get links total count
+func TestGetLinksTotalCount(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		db := setupTestDB(t)
+
+		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+			store := NewLinksStore(tx)
+
+			got, err := store.GetLinksTotalCount(ctx)
+			require.NoError(t, err)
+
+			require.Equal(t, int64(0), got)
+		})
+	})
+
+	t.Run("with links", func(t *testing.T) {
+		db := setupTestDB(t)
+
+		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+			store := NewLinksStore(tx)
+
+			seedDB(t, tx, "links")
+
+			got, err := store.GetLinksTotalCount(ctx)
+			require.NoError(t, err)
+
+			require.Equal(t, int64(10), got)
+		})
+	})
+}
 
 func TestUpdateLink(t *testing.T) {
 	db := setupTestDB(t)
