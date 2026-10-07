@@ -9,96 +9,122 @@ import (
 	"hexleturlshort/internal/links"
 )
 
-func TestGetVisitsPagination(t *testing.T) {
+func TestGetVisits(t *testing.T) {
 	cases := []struct {
-		name        string
-		from        int32
-		to          int32
-		total       int64
-		resultCount int
-		storeCalls  int
+		name      string
+		rang      Range
+		sort      SortOrder
+		sortBy    string
+		order     string
+		setup     func(store *fakeVisitsStore)
+		wantTotal int64
+		wantItems []links.Visit
+		err       error
 	}{
 		{
-			name:        "from 0 to 5, total 1",
-			from:        0,
-			to:          5,
-			total:       1,
-			resultCount: 1,
-			storeCalls:  2,
+			name: "basic case",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeVisitsStore) {
+				store.
+					On("GetVisitsTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetVisits", mock.Anything, GetVisitsParams{
+						Range: createRange(t, 0, 2),
+						Sort:  createSort(t, "id", "ASC"),
+					}).
+					Return(createVisits(t, 3), nil)
+			},
+			wantTotal: 10,
+			wantItems: createVisits(t, 3),
 		},
 		{
-			name:        "from 0 to 5, total 3",
-			from:        0,
-			to:          5,
-			total:       3,
-			resultCount: 3,
-			storeCalls:  2,
+			name: "no visits",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeVisitsStore) {
+				store.
+					On("GetVisitsTotalCount", mock.Anything).
+					Return(int64(0), nil)
+			},
+			wantTotal: 0,
+			wantItems: nil,
 		},
 		{
-			name:        "from 0 to 5, total 6",
-			from:        0,
-			to:          5,
-			total:       6,
-			resultCount: 5,
-			storeCalls:  2,
+			name: "unsupported sorting",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "unknown", "ASC"),
+			setup: func(store *fakeVisitsStore) {
+				store.
+					On("GetVisitsTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetVisits", mock.Anything, GetVisitsParams{
+						Range: createRange(t, 0, 2),
+						Sort:  createSort(t, "unknown", "ASC"),
+					}).
+					Return([]links.Visit{}, ErrUnsupportedSortOrder)
+			},
+			err: ErrUnsupportedSortOrder,
 		},
 		{
-			name:        "from 0 to 5, total 0",
-			from:        0,
-			to:          5,
-			total:       0,
-			resultCount: 0,
-			storeCalls:  1,
+			name: "reffer remaped",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "reffer", "ASC"),
+			setup: func(store *fakeVisitsStore) {
+				store.
+					On("GetVisitsTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetVisits", mock.Anything, GetVisitsParams{
+						Range: createRange(t, 0, 2),
+						Sort:  createSort(t, "referer", "ASC"),
+					}).
+					Return(createVisits(t, 3), nil)
+			},
+			wantTotal: 10,
+			wantItems: createVisits(t, 3),
+		},
+		{
+			name: "store error on total count",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeVisitsStore) {
+				store.
+					On("GetVisitsTotalCount", mock.Anything).
+					Return(int64(0), ErrStoreInternal)
+			},
+			err: ErrStoreInternal,
+		},
+		{
+			name: "store error on items loading",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeVisitsStore) {
+				store.
+					On("GetVisitsTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetVisits", mock.Anything, mock.Anything).
+					Return([]links.Visit{}, ErrStoreInternal)
+			},
+			err: ErrStoreInternal,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			visits := make([]links.Visit, tc.resultCount)
-
-			for i := range tc.resultCount {
-				visit, err := links.NewVisit(
-					0, "0.0.0.0", "", "", 302,
-				)
-				require.NoError(t, err)
-
-				visits[i] = visit
-			}
-
-			listRange, err := NewRange(tc.from, tc.to)
-			require.NoError(t, err)
-
-			params := GetVisitsParams{
-				Range: listRange,
-			}
-
 			store := new(fakeVisitsStore)
 
-			store.
-				On("GetVisits", mock.Anything, params).
-				Return(visits, nil).
-				On("GetVisitsTotalCount", mock.Anything).
-				Return(tc.total, nil)
+			tc.setup(store)
 
-			generator := &fakeShortcodeGen{}
-			svc := NewService(
-				&fakeLinksStore{},
-				store,
-				generator,
-			)
+			svc := NewService(&fakeLinksStore{}, store, &fakeShortcodeGen{})
 
-			got, err := svc.GetVisits(t.Context(), params)
+			got, err := svc.GetVisits(t.Context(), GetVisitsParams{
+				Range: tc.rang,
+				Sort:  tc.sort,
+			})
 
-			require.NoError(t, err)
-			require.Equal(t, tc.total, got.Total)
-			require.Equal(t, tc.storeCalls, len(store.Calls))
-			require.Equal(t, tc.resultCount, len(got.Items))
-
-			if tc.resultCount > 0 {
-				require.Equal(t, visits, got.Items)
-			}
+			require.ErrorIs(t, err, tc.err)
+			require.Equal(t, tc.wantTotal, got.Total)
+			require.Equal(t, tc.wantItems, got.Items)
 		})
 	}
-
-	// TODO: test errors
 }
