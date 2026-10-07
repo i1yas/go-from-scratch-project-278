@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 
 	"hexleturlshort/internal/links"
@@ -87,6 +88,8 @@ func handleError(c *gin.Context, err error) {
 	for _, internalErr := range internalErrors {
 		if errors.Is(err, internalErr) {
 			c.Status(500)
+			reportError(c, err)
+
 			return
 		}
 	}
@@ -109,4 +112,12 @@ func handleError(c *gin.Context, err error) {
 	}
 
 	c.Status(500)
+	reportError(c, err)
+}
+
+func reportError(c *gin.Context, err error) {
+	hub := sentrygin.GetHubFromContext(c)
+	if hub != nil {
+		hub.CaptureException(err)
+	}
 }
