@@ -467,9 +467,7 @@ func TestErrorInvalidStoreValue(t *testing.T) {
 
 		_, err = linksStore.GetLinkByID(ctx, createdLink.ID)
 		require.ErrorIs(t, err, application.ErrInvalidStoreValue)
-
-		// TODO: add sentinel error for invalid link and check it here
-		require.Error(t, err)
+		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
 	})
 }
 
