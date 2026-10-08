@@ -1,7 +1,6 @@
 package application
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -12,92 +11,141 @@ import (
 
 func TestGetLinks(t *testing.T) {
 	cases := []struct {
-		name        string
-		from        int32
-		to          int32
-		total       int64
-		resultCount int
-		storeCalls  int
+		name      string
+		rang      Range
+		sort      SortOrder
+		sortBy    string
+		order     string
+		setup     func(store *fakeLinksStore)
+		wantTotal int64
+		wantItems []links.Link
+		err       error
 	}{
 		{
-			name:        "from 0 to 5, total 1",
-			from:        0,
-			to:          5,
-			total:       1,
-			resultCount: 1,
-			storeCalls:  2,
+			name: "basic case",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeLinksStore) {
+				store.
+					On("GetLinksTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetLinks", mock.Anything, GetLinksParams{
+						Range: createRange(t, 0, 2),
+						Sort:  createSort(t, "id", "ASC"),
+					}).
+					Return(createLinks(t, 3), nil)
+			},
+			wantTotal: 10,
+			wantItems: createLinks(t, 3),
 		},
 		{
-			name:        "from 0 to 5, total 3",
-			from:        0,
-			to:          5,
-			total:       3,
-			resultCount: 3,
-			storeCalls:  2,
+			name: "no links",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeLinksStore) {
+				store.
+					On("GetLinksTotalCount", mock.Anything).
+					Return(int64(0), nil)
+			},
+			wantTotal: 0,
+			wantItems: nil,
 		},
 		{
-			name:        "from 0 to 5, total 6",
-			from:        0,
-			to:          5,
-			total:       6,
-			resultCount: 5,
-			storeCalls:  2,
+			name: "unsupported sorting",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "unknown", "ASC"),
+			setup: func(store *fakeLinksStore) {
+				store.
+					On("GetLinksTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetLinks", mock.Anything, GetLinksParams{
+						Range: createRange(t, 0, 2),
+						Sort:  createSort(t, "unknown", "ASC"),
+					}).
+					Return([]links.Link{}, ErrUnsupportedSortOrder)
+			},
+			err: ErrUnsupportedSortOrder,
 		},
 		{
-			name:        "from 0 to 5, total 0",
-			from:        0,
-			to:          5,
-			total:       0,
-			resultCount: 0,
-			storeCalls:  1,
+			name: "short_name remapped to shortcode",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "short_name", "ASC"),
+			setup: func(store *fakeLinksStore) {
+				store.
+					On("GetLinksTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetLinks", mock.Anything, GetLinksParams{
+						Range: createRange(t, 0, 2),
+						Sort:  createSort(t, "shortcode", "ASC"),
+					}).
+					Return(createLinks(t, 3), nil)
+			},
+			wantTotal: 10,
+			wantItems: createLinks(t, 3),
+		},
+		{
+			name: "short_url remapped to shortcode",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "short_url", "ASC"),
+			setup: func(store *fakeLinksStore) {
+				store.
+					On("GetLinksTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetLinks", mock.Anything, GetLinksParams{
+						Range: createRange(t, 0, 2),
+						Sort:  createSort(t, "shortcode", "ASC"),
+					}).
+					Return(createLinks(t, 3), nil)
+			},
+			wantTotal: 10,
+			wantItems: createLinks(t, 3),
+		},
+		{
+			name: "store error on total count",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeLinksStore) {
+				store.
+					On("GetLinksTotalCount", mock.Anything).
+					Return(int64(0), ErrStoreInternal)
+			},
+			err: ErrStoreInternal,
+		},
+		{
+			name: "store error on items loading",
+			rang: createRange(t, 0, 2),
+			sort: createSort(t, "id", "ASC"),
+			setup: func(store *fakeLinksStore) {
+				store.
+					On("GetLinksTotalCount", mock.Anything).
+					Return(int64(10), nil).
+					On("GetLinks", mock.Anything, mock.Anything).
+					Return([]links.Link{}, ErrStoreInternal)
+			},
+			err: ErrStoreInternal,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			linkItems := make([]links.Link, tc.resultCount)
-
-			for i := range tc.resultCount {
-				code := fmt.Sprintf("link-%d", i)
-				linkItems[i] = createValidLink(t, code)
-			}
-
-			linksRange, err := NewRange(tc.from, tc.to)
-			require.NoError(t, err)
-
-			params := GetLinksParams{
-				Range: linksRange,
-			}
-
 			store := new(fakeLinksStore)
 
-			store.
-				On("GetLinks", mock.Anything, params).
-				Return(linkItems, nil).
-				On("GetLinksTotalCount", mock.Anything).
-				Return(tc.total, nil)
+			tc.setup(store)
 
-			generator := &fakeShortcodeGen{}
-			svc := NewService(
-				store,
-				&fakeVisitsStore{},
-				generator,
-			)
+			svc := NewService(store, &fakeVisitsStore{}, &fakeShortcodeGen{})
 
-			got, err := svc.GetLinks(t.Context(), params)
+			got, err := svc.GetLinks(t.Context(), GetLinksParams{
+				Range: tc.rang,
+				Sort:  tc.sort,
+			})
 
-			require.NoError(t, err)
-			require.Equal(t, tc.total, got.Total)
-			require.Equal(t, tc.storeCalls, len(store.Calls))
-			require.Equal(t, tc.resultCount, len(got.Items))
+			require.ErrorIs(t, err, tc.err)
+			require.Equal(t, tc.wantTotal, got.Total)
+			require.Equal(t, tc.wantItems, got.Items)
 
-			if tc.resultCount > 0 {
-				require.Equal(t, linkItems, got.Items)
-			}
+			store.AssertExpectations(t)
 		})
 	}
-
-	// TODO: test errors
 }
 
 func TestGetLinkByID(t *testing.T) {

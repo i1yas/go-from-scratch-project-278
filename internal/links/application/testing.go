@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -97,6 +98,23 @@ func createValidLink(t *testing.T, codeRaw string) links.Link {
 	require.NoError(t, err)
 
 	return link
+}
+
+func createLinks(t *testing.T, count int) []links.Link {
+	result := make([]links.Link, count)
+
+	for i := range count {
+		link, err := links.NewLinkWithID(
+			int64(i+1),
+			fmt.Sprintf("http://test.com/page-%d", i),
+			fmt.Sprintf("test-%d", i),
+		)
+		require.NoError(t, err)
+
+		result[i] = link
+	}
+
+	return result
 }
 
 func createVisits(t *testing.T, count int) []links.Visit {
