@@ -95,6 +95,15 @@ func handleError(c *gin.Context, err error) {
 		}
 	}
 
+	verr, ok := errors.AsType[*links.ValidationError](err)
+	if ok {
+		c.JSON(http.StatusUnprocessableEntity, errorResponse{
+			Errors: convertFieldErrorsToMap(verr.Fields),
+		})
+
+		return
+	}
+
 	for _, mappedErr := range errorsMappings {
 		if errors.Is(err, mappedErr.originalErr) {
 			c.JSON(mappedErr.status, mappedErr)
@@ -103,17 +112,29 @@ func handleError(c *gin.Context, err error) {
 		}
 	}
 
-	var linkErr *links.LinkError
-	if errors.As(err, &linkErr) {
-		c.JSON(http.StatusUnprocessableEntity, errorResponse{
-			Errors: linkErr.Fields,
-		})
-
-		return
-	}
-
 	c.Status(500)
 	reportError(c, err)
+}
+
+var fieldMapper = map[string]string{
+	"shortcode": "short_name",
+}
+
+func convertFieldErrorsToMap(errs []links.FieldError) map[string]string {
+	result := make(map[string]string, len(errs))
+
+	for _, ferr := range errs {
+		fieldName := ferr.Field
+
+		mappedField, ok := fieldMapper[fieldName]
+		if ok {
+			fieldName = mappedField
+		}
+
+		result[fieldName] = ferr.Err.Error()
+	}
+
+	return result
 }
 
 func reportError(c *gin.Context, err error) {

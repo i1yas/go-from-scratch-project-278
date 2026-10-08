@@ -13,22 +13,16 @@ type Link struct {
 
 // NewLink takes raw input, validates and creates Link
 func NewLink(originalURLRaw, shortcodeRaw string) (Link, error) {
-	fieldsErrs := make(map[string]string)
+	var verr ValidationError
 
 	originalURL, err := NewURL(originalURLRaw)
-	if err != nil {
-		fieldsErrs["original_url"] = err.Error()
-	}
+	verr.add("original_url", err)
 
 	shortcode, err := NewShortCode(shortcodeRaw)
-	if err != nil {
-		fieldsErrs["shortcode"] = err.Error()
-	}
+	verr.add("shortcode", err)
 
-	if len(fieldsErrs) > 0 {
-		return Link{}, &LinkError{
-			Fields: fieldsErrs,
-		}
+	if err := verr.err(); err != nil {
+		return Link{}, err
 	}
 
 	link := Link{
@@ -66,14 +60,4 @@ func (l Link) ShortURL(baseURL URL) (URL, error) {
 	parsed.Path = path
 
 	return NewURL(parsed.String())
-}
-
-// LinkError contains field Link field errors
-type LinkError struct {
-	Fields map[string]string
-}
-
-// Error returns LinkError message
-func (e *LinkError) Error() string {
-	return "invalid link"
 }

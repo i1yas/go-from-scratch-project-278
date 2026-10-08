@@ -361,9 +361,9 @@ func TestCreateLink(t *testing.T) {
 					On("CreateLink", mock.Anything, application.CreateLinkParams{
 						OriginalURL: "bla",
 					}).
-					Return(links.Link{}, &links.LinkError{
-						Fields: map[string]string{
-							"original_url": "invalid url",
+					Return(links.Link{}, &links.ValidationError{
+						Fields: []links.FieldError{
+							{Field: "original_url", Err: links.ErrInvlalidURL},
 						},
 					})
 			},
@@ -500,9 +500,9 @@ func TestUpdateLink(t *testing.T) {
 						ID:          101,
 						OriginalURL: "http://domain101.com",
 					}).
-					Return(links.Link{}, &links.LinkError{
-						Fields: map[string]string{
-							"short_name": "invalid shortcode",
+					Return(links.Link{}, &links.ValidationError{
+						Fields: []links.FieldError{
+							{Field: "shortcode", Err: links.ErrInvlalidShortCode},
 						},
 					})
 			},

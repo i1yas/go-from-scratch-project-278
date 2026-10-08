@@ -1,7 +1,6 @@
 package links
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,7 +12,7 @@ func TestNewLink(t *testing.T) {
 		originalURL string
 		shortcode   string
 		want        Link
-		fieldsErrs  map[string]string
+		errs        []FieldError
 	}{
 		{
 			name:        "valid link",
@@ -28,25 +27,25 @@ func TestNewLink(t *testing.T) {
 			name:        "error, empty url",
 			originalURL: "",
 			shortcode:   "test",
-			fieldsErrs: map[string]string{
-				"original_url": ErrInvlalidURL.Error(),
+			errs: []FieldError{
+				{"original_url", ErrInvlalidURL},
 			},
 		},
 		{
 			name:        "error, empty shortcode",
 			originalURL: "http://test.com",
 			shortcode:   "",
-			fieldsErrs: map[string]string{
-				"shortcode": ErrInvlalidShortCode.Error(),
+			errs: []FieldError{
+				{"shortcode", ErrInvlalidShortCode},
 			},
 		},
 		{
 			name:        "error, both original url and shortcode are empty",
 			originalURL: "",
 			shortcode:   "",
-			fieldsErrs: map[string]string{
-				"original_url": ErrInvlalidURL.Error(),
-				"shortcode":    ErrInvlalidShortCode.Error(),
+			errs: []FieldError{
+				{"original_url", ErrInvlalidURL},
+				{"shortcode", ErrInvlalidShortCode},
 			},
 		},
 	}
@@ -55,14 +54,18 @@ func TestNewLink(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := NewLink(tc.originalURL, tc.shortcode)
 
-			if tc.fieldsErrs == nil {
+			if tc.errs == nil {
 				require.NoError(t, err)
 				require.Equal(t, tc.want, got)
 			} else {
-				linkErr, ok := errors.AsType[*LinkError](err)
-				require.True(t, ok)
+				var verr *ValidationError
+				require.ErrorAs(t, err, &verr)
+				require.Equal(t, len(tc.errs), len(verr.Fields))
 
-				require.Equal(t, tc.fieldsErrs, linkErr.Fields)
+				for _, ferr := range tc.errs {
+					require.ErrorIs(t, err, ferr.Err)
+					require.ErrorContains(t, err, ferr.Field)
+				}
 			}
 		})
 	}

@@ -53,9 +53,8 @@ func TestUpdateLink(t *testing.T) {
 			ShortCode:   "",
 		})
 
-		var linkErr *links.LinkError
-		require.ErrorAs(t, err, &linkErr)
-		require.Contains(t, linkErr.Fields, "shortcode")
+		require.ErrorContains(t, err, "shortcode:")
+		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
 		require.Equal(t, 0, len(store.Calls))
 	})
 
@@ -74,9 +73,8 @@ func TestUpdateLink(t *testing.T) {
 			ShortCode:   "code",
 		})
 
-		var linkErr *links.LinkError
-		require.ErrorAs(t, err, &linkErr)
-		require.Contains(t, linkErr.Fields, "original_url")
+		require.ErrorContains(t, err, "original_url:")
+		require.ErrorIs(t, err, links.ErrInvlalidURL)
 		require.Equal(t, 0, len(store.Calls))
 	})
 

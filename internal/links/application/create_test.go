@@ -128,9 +128,8 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		var linkErr *links.LinkError
-		require.ErrorAs(t, err, &linkErr)
-		require.Contains(t, linkErr.Fields, "shortcode")
+		require.ErrorContains(t, err, "shortcode:")
+		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
 		require.Equal(t, 0, len(store.Calls))
 	})
 
@@ -152,9 +151,8 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		var linkErr *links.LinkError
-		require.ErrorAs(t, err, &linkErr)
-		require.Contains(t, linkErr.Fields, "original_url")
+		require.ErrorContains(t, err, "original_url:")
+		require.ErrorIs(t, err, links.ErrInvlalidURL)
 		require.Equal(t, 0, len(store.Calls))
 	})
 
@@ -225,9 +223,8 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		var linkErr *links.LinkError
-		require.ErrorAs(t, err, &linkErr)
-		require.Contains(t, linkErr.Fields, "shortcode")
+		require.ErrorContains(t, err, "shortcode:")
+		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
 		require.Equal(t, len(store.Calls), 0)
 		require.Equal(t, generator.calls, 1)
 	})
