@@ -210,10 +210,6 @@ func TestCreateLink(t *testing.T) {
 			OriginalURL: "https://test.com/test",
 		}
 
-		store.
-			On("CreateLink", mock.Anything, mock.Anything).
-			Return(links.Link{}, ErrShortCodeConflict)
-
 		generator := &fakeShortcodeGen{codes: []string{""}}
 		svc := NewService(
 			store,
@@ -223,9 +219,7 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		require.ErrorContains(t, err, "shortcode:")
-		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
-		require.Equal(t, len(store.Calls), 0)
+		require.ErrorIs(t, err, ErrShortCodeGeneratorInternal)
 		require.Equal(t, generator.calls, 1)
 	})
 }

@@ -35,6 +35,11 @@ func (s *Service) CreateLink(ctx context.Context, params CreateLinkParams) (link
 		}
 
 		link, err := links.NewLink(params.OriginalURL, generatedCode)
+		if errors.Is(err, links.ErrInvlalidShortCode) {
+			return links.Link{}, fmt.Errorf("%w: %w",
+				ErrShortCodeGeneratorInternal, err)
+		}
+
 		if err != nil {
 			return links.Link{}, err
 		}
