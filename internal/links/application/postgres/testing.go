@@ -113,6 +113,16 @@ func linksCodes(linkItems []links.Link) []links.ShortCode {
 	return codes
 }
 
+func linksIDs(linkItems []links.Link) []int64 {
+	ids := make([]int64, len(linkItems))
+
+	for i, link := range linkItems {
+		ids[i] = link.ID
+	}
+
+	return ids
+}
+
 func seedDB(t *testing.T, db sqlcgen.DBTX, name string) {
 	path := filepath.Join("testdata", "seeds", name+".sql")
 

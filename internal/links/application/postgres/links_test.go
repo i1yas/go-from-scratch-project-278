@@ -128,65 +128,47 @@ func TestGetLinksPagination(t *testing.T) {
 }
 
 func TestGetLinksSorting(t *testing.T) {
-	linksParams := []struct {
-		originalURL string
-		shortcode   string
-	}{
-		{
-			originalURL: "http://domain-1.com",
-			shortcode:   "link-2-n1",
-		},
-		{
-			originalURL: "http://domain-3.com",
-			shortcode:   "link-1-n2",
-		},
-		{
-			originalURL: "http://domain-2.com",
-			shortcode:   "link-3-n3",
-		},
-	}
-
 	cases := []struct {
-		name         string
-		sortBy       string
-		order        string
-		wantIndOrder []int
+		name        string
+		sortBy      string
+		order       string
+		wantIDOrder []int64
 	}{
 		{
-			name:         "id ASC",
-			sortBy:       "id",
-			order:        application.OrderASC,
-			wantIndOrder: []int{0, 1, 2},
+			name:        "id ASC",
+			sortBy:      "id",
+			order:       application.OrderASC,
+			wantIDOrder: []int64{1, 2, 3},
 		},
 		{
-			name:         "id DESC",
-			sortBy:       "id",
-			order:        application.OrderDESC,
-			wantIndOrder: []int{2, 1, 0},
+			name:        "id DESC",
+			sortBy:      "id",
+			order:       application.OrderDESC,
+			wantIDOrder: []int64{10, 9, 8},
 		},
 		{
-			name:         "shortcode ASC",
-			sortBy:       "shortcode",
-			order:        application.OrderASC,
-			wantIndOrder: []int{1, 0, 2},
+			name:        "shortcode ASC",
+			sortBy:      "shortcode",
+			order:       application.OrderASC,
+			wantIDOrder: []int64{9, 10, 3},
 		},
 		{
-			name:         "shortcode DESC",
-			sortBy:       "shortcode",
-			order:        application.OrderDESC,
-			wantIndOrder: []int{2, 0, 1},
+			name:        "shortcode DESC",
+			sortBy:      "shortcode",
+			order:       application.OrderDESC,
+			wantIDOrder: []int64{2, 5, 8},
 		},
 		{
-			name:         "original_url ASC",
-			sortBy:       "original_url",
-			order:        application.OrderASC,
-			wantIndOrder: []int{0, 2, 1},
+			name:        "original_url ASC",
+			sortBy:      "original_url",
+			order:       application.OrderASC,
+			wantIDOrder: []int64{4, 6, 10},
 		},
 		{
-			name:         "original_url DESC",
-			sortBy:       "original_url",
-			order:        application.OrderDESC,
-			wantIndOrder: []int{1, 2, 0},
+			name:        "original_url DESC",
+			sortBy:      "original_url",
+			order:       application.OrderDESC,
+			wantIDOrder: []int64{5, 2, 8},
 		},
 	}
 
@@ -195,38 +177,20 @@ func TestGetLinksSorting(t *testing.T) {
 			db := setupTestDB(t)
 
 			withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+				seedDB(t, tx, "links")
+
 				linksStore := NewLinksStore(tx)
-
-				var linkItems []links.Link
-
-				for _, linkParams := range linksParams {
-					link, err := links.NewLink(linkParams.originalURL, linkParams.shortcode)
-					require.NoError(t, err)
-
-					linkItems = append(linkItems, link)
-
-					_, err = linksStore.CreateLink(ctx, link)
-					require.NoError(t, err)
-				}
-
-				linksRange, err := application.NewRange(0, 5)
-				require.NoError(t, err)
 
 				sort, err := application.NewSortOrder(tc.sortBy, string(tc.order))
 				require.NoError(t, err)
 
-				want := make([]links.Link, len(linkItems))
-				for i, k := range tc.wantIndOrder {
-					want[i] = linkItems[k]
-				}
-
 				got, err := linksStore.GetLinks(ctx, application.GetLinksParams{
-					Range: linksRange,
+					Range: testutils.Range(t, 0, 2),
 					Sort:  sort,
 				})
 
 				require.NoError(t, err)
-				require.Equal(t, linksCodes(want), linksCodes(got))
+				require.Equal(t, tc.wantIDOrder, linksIDs(got))
 			})
 		})
 	}
