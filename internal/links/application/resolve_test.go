@@ -48,7 +48,66 @@ func TestResolveLink(t *testing.T) {
 		visitsStore.AssertExpectations(t)
 	})
 
-	// TODO: check errors for visit recording: invalid record and store failure
+	t.Run("resolve works on visit recording failure", func(t *testing.T) {
+		linksStore := new(fakeLinksStore)
+		visitsStore := new(fakeVisitsStore)
+
+		params := commonResolveLinkParams("test")
+
+		code, err := links.NewShortCode(params.Code)
+		require.NoError(t, err)
+
+		wantLink := testutils.Link(t, params.Code)
+
+		linksStore.
+			On("GetLinkByCode", mock.Anything, code).
+			Return(wantLink, nil)
+
+		visitsStore.
+			On("CreateVisit", mock.Anything, mock.Anything).
+			Return(links.ErrInvalidVisit)
+
+		svc := application.NewService(
+			linksStore,
+			visitsStore,
+			&fakeShortcodeGen{},
+		)
+
+		got, err := svc.ResolveLink(t.Context(), params)
+
+		require.NoError(t, err)
+		require.Equal(t, wantLink.OriginalURL, got)
+
+		linksStore.AssertExpectations(t)
+		visitsStore.AssertExpectations(t)
+	})
+
+	t.Run("store internal error", func(t *testing.T) {
+		linksStore := new(fakeLinksStore)
+		visitsStore := new(fakeVisitsStore)
+
+		params := commonResolveLinkParams("test")
+
+		code, err := links.NewShortCode(params.Code)
+		require.NoError(t, err)
+
+		linksStore.
+			On("GetLinkByCode", mock.Anything, code).
+			Return(links.Link{}, application.ErrStoreInternal)
+
+		svc := application.NewService(
+			linksStore,
+			visitsStore,
+			&fakeShortcodeGen{},
+		)
+
+		_, err = svc.ResolveLink(t.Context(), params)
+
+		require.ErrorIs(t, err, application.ErrStoreInternal)
+
+		linksStore.AssertExpectations(t)
+		visitsStore.AssertExpectations(t)
+	})
 
 	t.Run("resolve with invalid code", func(t *testing.T) {
 		store := new(fakeLinksStore)
