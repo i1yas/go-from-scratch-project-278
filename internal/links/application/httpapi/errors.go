@@ -82,6 +82,7 @@ var errorsMappings = []errorResponse{
 var internalErrors = []error{
 	application.ErrStoreInternal,
 	application.ErrInvalidStoreValue,
+	application.ErrShortCodeGeneratorInternal,
 }
 
 func handleError(c *gin.Context, err error) {
