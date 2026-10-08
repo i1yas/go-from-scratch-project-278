@@ -31,7 +31,7 @@ func (s *Service) CreateLink(ctx context.Context, params CreateLinkParams) (link
 		generatedCode, err := s.shortcodeGen.Generate()
 		if err != nil {
 			return links.Link{}, fmt.Errorf("%w: %w",
-				ErrFailedToGenerateValidShortCode, err)
+				ErrShortCodeGeneratorInternal, err)
 		}
 
 		link, err := links.NewLink(params.OriginalURL, generatedCode)

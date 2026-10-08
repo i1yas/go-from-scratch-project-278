@@ -35,7 +35,7 @@ func (g *Generator) Generate() (string, error) {
 		charInd, err := rand.Int(g.randSource, maxInd)
 		if err != nil {
 			return "", fmt.Errorf("%w: %w",
-				application.ErrFailedToGenerateValidShortCode,
+				application.ErrShortCodeGeneratorInternal,
 				err,
 			)
 		}

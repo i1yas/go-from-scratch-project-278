@@ -158,7 +158,7 @@ func TestCreateLink(t *testing.T) {
 		require.Equal(t, 0, len(store.Calls))
 	})
 
-	t.Run("failed to generate valid shortcode", func(t *testing.T) {
+	t.Run("failed to generate shortcode", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
 		params := CreateLinkParams{
@@ -174,7 +174,7 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		require.ErrorIs(t, err, ErrFailedToGenerateValidShortCode)
+		require.ErrorIs(t, err, ErrShortCodeGeneratorInternal)
 		require.Equal(t, 0, len(store.Calls))
 		require.Equal(t, 1, generator.calls)
 	})

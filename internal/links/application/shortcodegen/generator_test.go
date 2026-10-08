@@ -50,7 +50,7 @@ func TestGenerator(t *testing.T) {
 		generator := NewGenerator(&brokenRandSource)
 
 		_, err := generator.Generate()
-		require.ErrorIs(t, err, application.ErrFailedToGenerateValidShortCode)
+		require.ErrorIs(t, err, application.ErrShortCodeGeneratorInternal)
 	})
 }
 
