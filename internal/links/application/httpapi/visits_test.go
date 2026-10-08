@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestGetVisits(t *testing.T) {
@@ -28,8 +29,8 @@ func TestGetVisits(t *testing.T) {
 			setup: func(svc *fakeVisitsService) {
 				svc.
 					On("GetVisits", mock.Anything, application.GetVisitsParams{
-						Range: createRange(t, 0, 4),
-						Sort:  createSort(t, "id", "ASC"),
+						Range: testutils.Range(t, 0, 4),
+						Sort:  testutils.SortOrder(t, "id", "ASC"),
 					}).
 					Return(application.VisitsResult{
 						Items: createVisits(t, []int64{
@@ -48,8 +49,8 @@ func TestGetVisits(t *testing.T) {
 			setup: func(svc *fakeVisitsService) {
 				svc.
 					On("GetVisits", mock.Anything, application.GetVisitsParams{
-						Range: createRange(t, 1, 3),
-						Sort:  createSort(t, "id", "ASC"),
+						Range: testutils.Range(t, 1, 3),
+						Sort:  testutils.SortOrder(t, "id", "ASC"),
 					}).
 					Return(application.VisitsResult{
 						Items: createVisits(t, []int64{
@@ -68,8 +69,8 @@ func TestGetVisits(t *testing.T) {
 			setup: func(svc *fakeVisitsService) {
 				svc.
 					On("GetVisits", mock.Anything, application.GetVisitsParams{
-						Range: createRange(t, 0, 4),
-						Sort:  createSort(t, "ip", "DESC"),
+						Range: testutils.Range(t, 0, 4),
+						Sort:  testutils.SortOrder(t, "ip", "DESC"),
 					}).
 					Return(application.VisitsResult{
 						Items: createVisits(t, []int64{

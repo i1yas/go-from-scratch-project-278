@@ -10,6 +10,7 @@ import (
 
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestGetVisitsRange(t *testing.T) {
@@ -20,17 +21,17 @@ func TestGetVisitsRange(t *testing.T) {
 	}{
 		{
 			name:      "start, from 0 to 10",
-			rang:      application.Range{From: 0, To: 9},
+			rang:      testutils.Range(t, 0, 9),
 			wantItems: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 		},
 		{
 			name:      "middle, from 4 to 14",
-			rang:      application.Range{From: 4, To: 13},
+			rang:      testutils.Range(t, 4, 13),
 			wantItems: []int64{5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
 		},
 		{
 			name:      "end, from 10 to 20",
-			rang:      application.Range{From: 10, To: 19},
+			rang:      testutils.Range(t, 10, 19),
 			wantItems: []int64{11, 12, 13, 14, 15},
 		},
 	}

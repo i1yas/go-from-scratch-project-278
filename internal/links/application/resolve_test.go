@@ -1,4 +1,4 @@
-package application
+package application_test
 
 import (
 	"testing"
@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestResolveLink(t *testing.T) {
@@ -19,7 +21,7 @@ func TestResolveLink(t *testing.T) {
 		code, err := links.NewShortCode(params.Code)
 		require.NoError(t, err)
 
-		wantLink := createValidLink(t, params.Code)
+		wantLink := testutils.Link(t, params.Code)
 
 		linksStore.
 			On("GetLinkByCode", mock.Anything, code).
@@ -31,7 +33,7 @@ func TestResolveLink(t *testing.T) {
 			})).
 			Return(nil)
 
-		svc := NewService(
+		svc := application.NewService(
 			linksStore,
 			visitsStore,
 			&fakeShortcodeGen{},
@@ -53,7 +55,7 @@ func TestResolveLink(t *testing.T) {
 
 		params := commonResolveLinkParams("")
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
@@ -72,9 +74,9 @@ func TestResolveLink(t *testing.T) {
 
 		linksStore.
 			On("GetLinkByCode", mock.Anything, mock.Anything).
-			Return(links.Link{}, ErrLinkNotFound)
+			Return(links.Link{}, application.ErrLinkNotFound)
 
-		svc := NewService(
+		svc := application.NewService(
 			linksStore,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
@@ -82,7 +84,15 @@ func TestResolveLink(t *testing.T) {
 
 		_, err := svc.ResolveLink(t.Context(), params)
 
-		require.ErrorIs(t, err, ErrLinkNotFound)
+		require.ErrorIs(t, err, application.ErrLinkNotFound)
 		require.Greater(t, len(linksStore.Calls), 0)
 	})
+}
+
+func commonResolveLinkParams(codeRaw string) application.ResolveLinkParams {
+	return application.ResolveLinkParams{
+		Code:   codeRaw,
+		IP:     "1.2.3.4",
+		Status: 302,
+	}
 }

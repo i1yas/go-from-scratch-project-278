@@ -82,6 +82,9 @@ linters:
                   - forcetypeassert
               path: ".+testing.go$"
             - linters:
+                  - forcetypeassert
+              path: ".+mocks_test.go$"
+            - linters:
                   - goconst
               path: "internal/links/application/postgres/.*.go" 
               text: "string `.+ (ASC|DESC)` has.+"

@@ -1,4 +1,4 @@
-package application
+package application_test
 
 import (
 	"testing"
@@ -7,13 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestGetVisits(t *testing.T) {
 	cases := []struct {
 		name      string
-		rang      Range
-		sort      SortOrder
+		rang      application.Range
+		sort      application.SortOrder
 		sortBy    string
 		order     string
 		setup     func(store *fakeVisitsStore)
@@ -23,25 +25,25 @@ func TestGetVisits(t *testing.T) {
 	}{
 		{
 			name: "basic case",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeVisitsStore) {
 				store.
 					On("GetVisitsTotalCount", mock.Anything).
 					Return(int64(10), nil).
-					On("GetVisits", mock.Anything, GetVisitsParams{
-						Range: createRange(t, 0, 2),
-						Sort:  createSort(t, "id", "ASC"),
+					On("GetVisits", mock.Anything, application.GetVisitsParams{
+						Range: testutils.Range(t, 0, 2),
+						Sort:  testutils.SortOrder(t, "id", "ASC"),
 					}).
-					Return(createVisits(t, 3), nil)
+					Return(testutils.Visits(t, 3), nil)
 			},
 			wantTotal: 10,
-			wantItems: createVisits(t, 3),
+			wantItems: testutils.Visits(t, 3),
 		},
 		{
 			name: "no visits",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeVisitsStore) {
 				store.
 					On("GetVisitsTotalCount", mock.Anything).
@@ -52,60 +54,60 @@ func TestGetVisits(t *testing.T) {
 		},
 		{
 			name: "unsupported sorting",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "unknown", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "unknown", "ASC"),
 			setup: func(store *fakeVisitsStore) {
 				store.
 					On("GetVisitsTotalCount", mock.Anything).
 					Return(int64(10), nil).
-					On("GetVisits", mock.Anything, GetVisitsParams{
-						Range: createRange(t, 0, 2),
-						Sort:  createSort(t, "unknown", "ASC"),
+					On("GetVisits", mock.Anything, application.GetVisitsParams{
+						Range: testutils.Range(t, 0, 2),
+						Sort:  testutils.SortOrder(t, "unknown", "ASC"),
 					}).
-					Return([]links.Visit{}, ErrUnsupportedSortOrder)
+					Return([]links.Visit{}, application.ErrUnsupportedSortOrder)
 			},
-			err: ErrUnsupportedSortOrder,
+			err: application.ErrUnsupportedSortOrder,
 		},
 		{
 			name: "reffer remaped",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "reffer", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "reffer", "ASC"),
 			setup: func(store *fakeVisitsStore) {
 				store.
 					On("GetVisitsTotalCount", mock.Anything).
 					Return(int64(10), nil).
-					On("GetVisits", mock.Anything, GetVisitsParams{
-						Range: createRange(t, 0, 2),
-						Sort:  createSort(t, "referer", "ASC"),
+					On("GetVisits", mock.Anything, application.GetVisitsParams{
+						Range: testutils.Range(t, 0, 2),
+						Sort:  testutils.SortOrder(t, "referer", "ASC"),
 					}).
-					Return(createVisits(t, 3), nil)
+					Return(testutils.Visits(t, 3), nil)
 			},
 			wantTotal: 10,
-			wantItems: createVisits(t, 3),
+			wantItems: testutils.Visits(t, 3),
 		},
 		{
 			name: "store error on total count",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeVisitsStore) {
 				store.
 					On("GetVisitsTotalCount", mock.Anything).
-					Return(int64(0), ErrStoreInternal)
+					Return(int64(0), application.ErrStoreInternal)
 			},
-			err: ErrStoreInternal,
+			err: application.ErrStoreInternal,
 		},
 		{
 			name: "store error on items loading",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeVisitsStore) {
 				store.
 					On("GetVisitsTotalCount", mock.Anything).
 					Return(int64(10), nil).
 					On("GetVisits", mock.Anything, mock.Anything).
-					Return([]links.Visit{}, ErrStoreInternal)
+					Return([]links.Visit{}, application.ErrStoreInternal)
 			},
-			err: ErrStoreInternal,
+			err: application.ErrStoreInternal,
 		},
 	}
 
@@ -115,9 +117,9 @@ func TestGetVisits(t *testing.T) {
 
 			tc.setup(store)
 
-			svc := NewService(&fakeLinksStore{}, store, &fakeShortcodeGen{})
+			svc := application.NewService(&fakeLinksStore{}, store, &fakeShortcodeGen{})
 
-			got, err := svc.GetVisits(t.Context(), GetVisitsParams{
+			got, err := svc.GetVisits(t.Context(), application.GetVisitsParams{
 				Range: tc.rang,
 				Sort:  tc.sort,
 			})

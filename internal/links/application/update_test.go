@@ -1,4 +1,4 @@
-package application
+package application_test
 
 import (
 	"testing"
@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestUpdateLink(t *testing.T) {
@@ -14,20 +16,20 @@ func TestUpdateLink(t *testing.T) {
 		store := new(fakeLinksStore)
 
 		codeRaw := "test"
-		want := createValidLink(t, codeRaw)
+		want := testutils.Link(t, codeRaw)
 		want.ID = 101
 
 		store.
 			On("UpdateLink", mock.Anything, want).
 			Return(want, nil)
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
 		)
 
-		got, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
+		got, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
 			ID:          want.ID,
 			OriginalURL: string(want.OriginalURL),
 			ShortCode:   codeRaw,
@@ -41,13 +43,13 @@ func TestUpdateLink(t *testing.T) {
 	t.Run("update with invalid shortcode", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
 		)
 
-		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
+		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
 			ID:          101,
 			OriginalURL: "http://test.com",
 			ShortCode:   "",
@@ -61,13 +63,13 @@ func TestUpdateLink(t *testing.T) {
 	t.Run("update with invalid original url", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
 		)
 
-		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
+		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
 			ID:          101,
 			OriginalURL: "",
 			ShortCode:   "code",
@@ -81,51 +83,51 @@ func TestUpdateLink(t *testing.T) {
 	t.Run("link to update not found", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		validLink := createValidLink(t, "test")
+		validLink := testutils.Link(t, "test")
 
 		store.
 			On("UpdateLink", mock.Anything, mock.Anything).
-			Return(links.Link{}, ErrLinkNotFound)
+			Return(links.Link{}, application.ErrLinkNotFound)
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
 		)
 
-		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
+		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
 			ID:          101,
 			OriginalURL: string(validLink.OriginalURL),
 			ShortCode:   string(validLink.ShortCode),
 		})
 
-		require.ErrorIs(t, err, ErrLinkNotFound)
+		require.ErrorIs(t, err, application.ErrLinkNotFound)
 		require.Equal(t, 1, len(store.Calls))
 	})
 
 	t.Run("failed to update with conflicting code", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		want := createValidLink(t, "test")
+		want := testutils.Link(t, "test")
 		want.ID = 101
 
 		store.
 			On("UpdateLink", mock.Anything, want).
-			Return(want, ErrShortCodeConflict)
+			Return(want, application.ErrShortCodeConflict)
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
 		)
 
-		_, err := svc.UpdateLink(t.Context(), UpdateLinkParams{
+		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
 			ID:          want.ID,
 			OriginalURL: string(want.OriginalURL),
 			ShortCode:   string(want.ShortCode),
 		})
 
-		require.ErrorIs(t, err, ErrShortCodeConflict)
+		require.ErrorIs(t, err, application.ErrShortCodeConflict)
 		require.Equal(t, 1, len(store.Calls))
 	})
 }

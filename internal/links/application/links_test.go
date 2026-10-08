@@ -1,4 +1,4 @@
-package application
+package application_test
 
 import (
 	"testing"
@@ -7,13 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestGetLinks(t *testing.T) {
 	cases := []struct {
 		name      string
-		rang      Range
-		sort      SortOrder
+		rang      application.Range
+		sort      application.SortOrder
 		sortBy    string
 		order     string
 		setup     func(store *fakeLinksStore)
@@ -23,25 +25,25 @@ func TestGetLinks(t *testing.T) {
 	}{
 		{
 			name: "basic case",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeLinksStore) {
 				store.
 					On("GetLinksTotalCount", mock.Anything).
 					Return(int64(10), nil).
-					On("GetLinks", mock.Anything, GetLinksParams{
-						Range: createRange(t, 0, 2),
-						Sort:  createSort(t, "id", "ASC"),
+					On("GetLinks", mock.Anything, application.GetLinksParams{
+						Range: testutils.Range(t, 0, 2),
+						Sort:  testutils.SortOrder(t, "id", "ASC"),
 					}).
-					Return(createLinks(t, 3), nil)
+					Return(testutils.Links(t, 3), nil)
 			},
 			wantTotal: 10,
-			wantItems: createLinks(t, 3),
+			wantItems: testutils.Links(t, 3),
 		},
 		{
 			name: "no links",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeLinksStore) {
 				store.
 					On("GetLinksTotalCount", mock.Anything).
@@ -52,77 +54,77 @@ func TestGetLinks(t *testing.T) {
 		},
 		{
 			name: "unsupported sorting",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "unknown", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "unknown", "ASC"),
 			setup: func(store *fakeLinksStore) {
 				store.
 					On("GetLinksTotalCount", mock.Anything).
 					Return(int64(10), nil).
-					On("GetLinks", mock.Anything, GetLinksParams{
-						Range: createRange(t, 0, 2),
-						Sort:  createSort(t, "unknown", "ASC"),
+					On("GetLinks", mock.Anything, application.GetLinksParams{
+						Range: testutils.Range(t, 0, 2),
+						Sort:  testutils.SortOrder(t, "unknown", "ASC"),
 					}).
-					Return([]links.Link{}, ErrUnsupportedSortOrder)
+					Return([]links.Link{}, application.ErrUnsupportedSortOrder)
 			},
-			err: ErrUnsupportedSortOrder,
+			err: application.ErrUnsupportedSortOrder,
 		},
 		{
 			name: "short_name remapped to shortcode",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "short_name", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "short_name", "ASC"),
 			setup: func(store *fakeLinksStore) {
 				store.
 					On("GetLinksTotalCount", mock.Anything).
 					Return(int64(10), nil).
-					On("GetLinks", mock.Anything, GetLinksParams{
-						Range: createRange(t, 0, 2),
-						Sort:  createSort(t, "shortcode", "ASC"),
+					On("GetLinks", mock.Anything, application.GetLinksParams{
+						Range: testutils.Range(t, 0, 2),
+						Sort:  testutils.SortOrder(t, "shortcode", "ASC"),
 					}).
-					Return(createLinks(t, 3), nil)
+					Return(testutils.Links(t, 3), nil)
 			},
 			wantTotal: 10,
-			wantItems: createLinks(t, 3),
+			wantItems: testutils.Links(t, 3),
 		},
 		{
 			name: "short_url remapped to shortcode",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "short_url", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "short_url", "ASC"),
 			setup: func(store *fakeLinksStore) {
 				store.
 					On("GetLinksTotalCount", mock.Anything).
 					Return(int64(10), nil).
-					On("GetLinks", mock.Anything, GetLinksParams{
-						Range: createRange(t, 0, 2),
-						Sort:  createSort(t, "shortcode", "ASC"),
+					On("GetLinks", mock.Anything, application.GetLinksParams{
+						Range: testutils.Range(t, 0, 2),
+						Sort:  testutils.SortOrder(t, "shortcode", "ASC"),
 					}).
-					Return(createLinks(t, 3), nil)
+					Return(testutils.Links(t, 3), nil)
 			},
 			wantTotal: 10,
-			wantItems: createLinks(t, 3),
+			wantItems: testutils.Links(t, 3),
 		},
 		{
 			name: "store error on total count",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeLinksStore) {
 				store.
 					On("GetLinksTotalCount", mock.Anything).
-					Return(int64(0), ErrStoreInternal)
+					Return(int64(0), application.ErrStoreInternal)
 			},
-			err: ErrStoreInternal,
+			err: application.ErrStoreInternal,
 		},
 		{
 			name: "store error on items loading",
-			rang: createRange(t, 0, 2),
-			sort: createSort(t, "id", "ASC"),
+			rang: testutils.Range(t, 0, 2),
+			sort: testutils.SortOrder(t, "id", "ASC"),
 			setup: func(store *fakeLinksStore) {
 				store.
 					On("GetLinksTotalCount", mock.Anything).
 					Return(int64(10), nil).
 					On("GetLinks", mock.Anything, mock.Anything).
-					Return([]links.Link{}, ErrStoreInternal)
+					Return([]links.Link{}, application.ErrStoreInternal)
 			},
-			err: ErrStoreInternal,
+			err: application.ErrStoreInternal,
 		},
 	}
 
@@ -132,9 +134,9 @@ func TestGetLinks(t *testing.T) {
 
 			tc.setup(store)
 
-			svc := NewService(store, &fakeVisitsStore{}, &fakeShortcodeGen{})
+			svc := application.NewService(store, &fakeVisitsStore{}, &fakeShortcodeGen{})
 
-			got, err := svc.GetLinks(t.Context(), GetLinksParams{
+			got, err := svc.GetLinks(t.Context(), application.GetLinksParams{
 				Range: tc.rang,
 				Sort:  tc.sort,
 			})
@@ -152,7 +154,7 @@ func TestGetLinkByID(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		want := createValidLink(t, "test")
+		want := testutils.Link(t, "test")
 		want.ID = 101
 
 		store.
@@ -160,7 +162,7 @@ func TestGetLinkByID(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -177,10 +179,10 @@ func TestGetLinkByID(t *testing.T) {
 
 		store.
 			On("GetLinkByID", mock.Anything, mock.Anything).
-			Return(links.Link{}, ErrLinkNotFound)
+			Return(links.Link{}, application.ErrLinkNotFound)
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -188,6 +190,6 @@ func TestGetLinkByID(t *testing.T) {
 
 		_, err := svc.GetLinkByID(t.Context(), 101)
 
-		require.ErrorIs(t, err, ErrLinkNotFound)
+		require.ErrorIs(t, err, application.ErrLinkNotFound)
 	})
 }

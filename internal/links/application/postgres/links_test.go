@@ -12,6 +12,7 @@ import (
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
 	"hexleturlshort/internal/links/application/postgres/sqlcgen"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestCreateAndGetLink(t *testing.T) {
@@ -36,7 +37,7 @@ func TestCreateAndGetLink(t *testing.T) {
 			withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 				linksStore := NewLinksStore(tx)
 
-				link := createValidLink(t, tc.input)
+				link := testutils.Link(t, tc.input)
 
 				createdLink, err := linksStore.CreateLink(ctx, link)
 				require.NoError(t, err)
@@ -97,7 +98,7 @@ func TestGetLinksPagination(t *testing.T) {
 
 				for i := range tc.total {
 					code := fmt.Sprintf("test-%d", i)
-					link := createValidLink(t, code)
+					link := testutils.Link(t, code)
 
 					linkItems = append(linkItems, link)
 
@@ -334,12 +335,12 @@ func TestUpdateLink(t *testing.T) {
 		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 			linksStore := NewLinksStore(tx)
 
-			link := createValidLink(t, "test")
+			link := testutils.Link(t, "test")
 
 			createdLink, err := linksStore.CreateLink(ctx, link)
 			require.NoError(t, err)
 
-			update := createValidLink(t, "test-2")
+			update := testutils.Link(t, "test-2")
 			update.ID = createdLink.ID
 
 			updatedLink, err := linksStore.UpdateLink(ctx, update)
@@ -353,7 +354,7 @@ func TestUpdateLink(t *testing.T) {
 		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 			linksStore := NewLinksStore(tx)
 
-			link := createValidLink(t, "test")
+			link := testutils.Link(t, "test")
 
 			_, err := linksStore.UpdateLink(ctx, link)
 			require.ErrorIs(t, err, application.ErrLinkNotFound)
@@ -364,8 +365,8 @@ func TestUpdateLink(t *testing.T) {
 		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 			linksStore := NewLinksStore(tx)
 
-			link1 := createValidLink(t, "test-1")
-			link2 := createValidLink(t, "test-2")
+			link1 := testutils.Link(t, "test-1")
+			link2 := testutils.Link(t, "test-2")
 
 			_, err := linksStore.CreateLink(ctx, link1)
 			require.NoError(t, err)
@@ -389,7 +390,7 @@ func TestDeleteLink(t *testing.T) {
 		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 			linksStore := NewLinksStore(tx)
 
-			link := createValidLink(t, "test")
+			link := testutils.Link(t, "test")
 
 			createdLink, err := linksStore.CreateLink(ctx, link)
 			require.NoError(t, err)
@@ -432,7 +433,7 @@ func TestErrorShortCodeConflict(t *testing.T) {
 	withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 		linksStore := NewLinksStore(tx)
 
-		link := createValidLink(t, "test")
+		link := testutils.Link(t, "test")
 
 		_, err := linksStore.CreateLink(ctx, link)
 		require.NoError(t, err)
@@ -448,7 +449,7 @@ func TestErrorInvalidStoreValue(t *testing.T) {
 	withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 		linksStore := NewLinksStore(tx)
 
-		link := createValidLink(t, "test")
+		link := testutils.Link(t, "test")
 
 		createdLink, err := linksStore.CreateLink(ctx, link)
 		require.NoError(t, err)
@@ -477,7 +478,7 @@ func TestErrorInteralStore(t *testing.T) {
 	withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 		linksStore := NewLinksStore(tx)
 
-		link := createValidLink(t, "test")
+		link := testutils.Link(t, "test")
 
 		err := tx.Rollback()
 		require.NoError(t, err)

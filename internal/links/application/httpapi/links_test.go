@@ -15,6 +15,7 @@ import (
 
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestGetLinkByID(t *testing.T) {
@@ -32,7 +33,7 @@ func TestGetLinkByID(t *testing.T) {
 				svc.
 					On("GetLinkByID", mock.Anything, int64(101)).
 					Return(
-						createValidLink(t,
+						testutils.FullLink(t,
 							101,
 							"http://domain101.com",
 							"link-101",
@@ -132,8 +133,8 @@ func TestGetLinks(t *testing.T) {
 			setup: func(svc *fakeLinkService) {
 				svc.
 					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: createRange(t, 0, 4),
-						Sort:  createSort(t, "id", "ASC"),
+						Range: testutils.Range(t, 0, 4),
+						Sort:  testutils.SortOrder(t, "id", "ASC"),
 					}).
 					Return(application.LinksResult{
 						Items: createLinks(t, []int64{
@@ -152,8 +153,8 @@ func TestGetLinks(t *testing.T) {
 			setup: func(svc *fakeLinkService) {
 				svc.
 					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: createRange(t, 1, 3),
-						Sort:  createSort(t, "id", "ASC"),
+						Range: testutils.Range(t, 1, 3),
+						Sort:  testutils.SortOrder(t, "id", "ASC"),
 					}).
 					Return(application.LinksResult{
 						Items: createLinks(t, []int64{
@@ -172,8 +173,8 @@ func TestGetLinks(t *testing.T) {
 			setup: func(svc *fakeLinkService) {
 				svc.
 					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: createRange(t, 0, 4),
-						Sort:  createSort(t, "original_url", "DESC"),
+						Range: testutils.Range(t, 0, 4),
+						Sort:  testutils.SortOrder(t, "original_url", "DESC"),
 					}).
 					Return(application.LinksResult{
 						Items: createLinks(t, []int64{
@@ -192,8 +193,8 @@ func TestGetLinks(t *testing.T) {
 			setup: func(svc *fakeLinkService) {
 				svc.
 					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: createRange(t, 5, 7),
-						Sort:  createSort(t, "short_url", "ASC"),
+						Range: testutils.Range(t, 5, 7),
+						Sort:  testutils.SortOrder(t, "short_url", "ASC"),
 					}).
 					Return(application.LinksResult{
 						Items: createLinks(t, []int64{
@@ -308,7 +309,7 @@ func TestCreateLink(t *testing.T) {
 						ShortCode:   &code,
 					}).
 					Return(
-						createValidLink(t,
+						testutils.FullLink(t,
 							101,
 							"http://domain101.com",
 							"link-101",
@@ -335,7 +336,7 @@ func TestCreateLink(t *testing.T) {
 						OriginalURL: "http://domain101.com",
 					}).
 					Return(
-						createValidLink(t,
+						testutils.FullLink(t,
 							101,
 							"http://domain101.com",
 							"generated-code",
@@ -462,7 +463,7 @@ func TestUpdateLink(t *testing.T) {
 						ShortCode:   "link-101",
 					}).
 					Return(
-						createValidLink(t,
+						testutils.FullLink(t,
 							101,
 							"http://domain101.com",
 							"link-101",

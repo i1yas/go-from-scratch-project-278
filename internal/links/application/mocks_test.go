@@ -1,22 +1,20 @@
-package application
+package application_test
 
 import (
 	"context"
 	"errors"
-	"fmt"
-	"testing"
 
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
 )
 
 type fakeLinksStore struct {
 	mock.Mock
 }
 
-func (s *fakeLinksStore) GetLinks(ctx context.Context, params GetLinksParams) ([]links.Link, error) {
+func (s *fakeLinksStore) GetLinks(ctx context.Context, params application.GetLinksParams) ([]links.Link, error) {
 	args := s.Called(ctx, params)
 	return args.Get(0).([]links.Link), args.Error(1)
 }
@@ -55,7 +53,7 @@ type fakeVisitsStore struct {
 	mock.Mock
 }
 
-func (s *fakeVisitsStore) GetVisits(ctx context.Context, params GetVisitsParams) ([]links.Visit, error) {
+func (s *fakeVisitsStore) GetVisits(ctx context.Context, params application.GetVisitsParams) ([]links.Visit, error) {
 	args := s.Called(ctx, params)
 	return args.Get(0).([]links.Visit), args.Error(1)
 }
@@ -86,72 +84,4 @@ func (g *fakeShortcodeGen) Generate() (string, error) {
 	code := g.codes[ind%len(g.codes)]
 
 	return code, nil
-}
-
-func createValidLink(t *testing.T, codeRaw string) links.Link {
-	t.Helper()
-
-	link, err := links.NewLink(
-		"http://test.com",
-		codeRaw,
-	)
-	require.NoError(t, err)
-
-	return link
-}
-
-func createLinks(t *testing.T, count int) []links.Link {
-	result := make([]links.Link, count)
-
-	for i := range count {
-		link, err := links.NewLinkWithID(
-			int64(i+1),
-			fmt.Sprintf("http://test.com/page-%d", i),
-			fmt.Sprintf("test-%d", i),
-		)
-		require.NoError(t, err)
-
-		result[i] = link
-	}
-
-	return result
-}
-
-func createVisits(t *testing.T, count int) []links.Visit {
-	result := make([]links.Visit, count)
-
-	for i := range count {
-		visit, err := links.NewVisit(
-			1, "1.2.3.4", "", "", 302,
-		)
-		require.NoError(t, err)
-
-		visit.ID = int64(i + 1)
-
-		result[i] = visit
-	}
-
-	return result
-}
-
-func commonResolveLinkParams(codeRaw string) ResolveLinkParams {
-	return ResolveLinkParams{
-		Code:   codeRaw,
-		IP:     "1.2.3.4",
-		Status: 302,
-	}
-}
-
-func createRange(t *testing.T, from, to int) Range {
-	rang, err := NewRange(int32(from), int32(to))
-	require.NoError(t, err)
-
-	return rang
-}
-
-func createSort(t *testing.T, sortBy, order string) SortOrder {
-	sort, err := NewSortOrder(sortBy, order)
-	require.NoError(t, err)
-
-	return sort
 }

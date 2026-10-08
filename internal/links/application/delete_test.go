@@ -1,10 +1,12 @@
-package application
+package application_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"hexleturlshort/internal/links/application"
 )
 
 func TestDeleteLink(t *testing.T) {
@@ -17,7 +19,7 @@ func TestDeleteLink(t *testing.T) {
 			On("DeleteLink", mock.Anything, id).
 			Return(nil)
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
@@ -34,9 +36,9 @@ func TestDeleteLink(t *testing.T) {
 
 		store.
 			On("DeleteLink", mock.Anything, mock.Anything).
-			Return(ErrLinkNotFound)
+			Return(application.ErrLinkNotFound)
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
@@ -44,7 +46,7 @@ func TestDeleteLink(t *testing.T) {
 
 		err := svc.DeleteLink(t.Context(), 101)
 
-		require.ErrorIs(t, err, ErrLinkNotFound)
+		require.ErrorIs(t, err, application.ErrLinkNotFound)
 		require.Equal(t, 1, len(store.Calls))
 	})
 }

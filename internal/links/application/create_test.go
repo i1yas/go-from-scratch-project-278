@@ -1,4 +1,4 @@
-package application
+package application_test
 
 import (
 	"testing"
@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/links/application"
+	"hexleturlshort/internal/links/application/testutils"
 )
 
 func TestCreateLink(t *testing.T) {
@@ -15,9 +17,9 @@ func TestCreateLink(t *testing.T) {
 
 		codeRaw := "test"
 
-		want := createValidLink(t, codeRaw)
+		want := testutils.Link(t, codeRaw)
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: string(want.OriginalURL),
 			ShortCode:   &codeRaw,
 		}
@@ -27,7 +29,7 @@ func TestCreateLink(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -46,9 +48,9 @@ func TestCreateLink(t *testing.T) {
 
 		generatedCode := "generated"
 
-		want := createValidLink(t, generatedCode)
+		want := testutils.Link(t, generatedCode)
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: string(want.OriginalURL),
 		}
 
@@ -57,7 +59,7 @@ func TestCreateLink(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{codes: []string{generatedCode}}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -76,9 +78,9 @@ func TestCreateLink(t *testing.T) {
 
 		codes := []string{"code-one", "code-two"}
 
-		want := createValidLink(t, codes[1])
+		want := testutils.Link(t, codes[1])
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: string(want.OriginalURL),
 		}
 
@@ -87,7 +89,7 @@ func TestCreateLink(t *testing.T) {
 				OriginalURL: want.OriginalURL,
 				ShortCode:   links.ShortCode(codes[0]),
 			}).
-			Return(links.Link{}, ErrShortCodeConflict).
+			Return(links.Link{}, application.ErrShortCodeConflict).
 			Once().
 			On("CreateLink", mock.Anything, links.Link{
 				OriginalURL: want.OriginalURL,
@@ -96,7 +98,7 @@ func TestCreateLink(t *testing.T) {
 			Return(want, nil)
 
 		generator := &fakeShortcodeGen{codes: codes}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -115,12 +117,12 @@ func TestCreateLink(t *testing.T) {
 
 		emptyCode := ""
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: "https://test.com/test",
 			ShortCode:   &emptyCode,
 		}
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
@@ -138,12 +140,12 @@ func TestCreateLink(t *testing.T) {
 
 		code := "code"
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: "",
 			ShortCode:   &code,
 		}
 
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
@@ -159,12 +161,12 @@ func TestCreateLink(t *testing.T) {
 	t.Run("failed to generate shortcode", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: "https://test.com/test",
 		}
 
 		generator := &fakeShortcodeGen{}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -172,7 +174,7 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		require.ErrorIs(t, err, ErrShortCodeGeneratorInternal)
+		require.ErrorIs(t, err, application.ErrShortCodeGeneratorInternal)
 		require.Equal(t, 0, len(store.Calls))
 		require.Equal(t, 1, generator.calls)
 	})
@@ -180,16 +182,16 @@ func TestCreateLink(t *testing.T) {
 	t.Run("failed to generate unique shortcode", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: "https://test.com/test",
 		}
 
 		store.
 			On("CreateLink", mock.Anything, mock.Anything).
-			Return(links.Link{}, ErrShortCodeConflict)
+			Return(links.Link{}, application.ErrShortCodeConflict)
 
 		generator := &fakeShortcodeGen{codes: []string{"code"}}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -197,7 +199,7 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		require.ErrorIs(t, err, ErrFailedToGenerateUniqueShortCode)
+		require.ErrorIs(t, err, application.ErrFailedToGenerateUniqueShortCode)
 		require.Greater(t, len(store.Calls), 2)
 		require.Greater(t, generator.calls, 2)
 		require.Equal(t, len(store.Calls), generator.calls)
@@ -206,12 +208,12 @@ func TestCreateLink(t *testing.T) {
 	t.Run("generated shortcode is invalid", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
-		params := CreateLinkParams{
+		params := application.CreateLinkParams{
 			OriginalURL: "https://test.com/test",
 		}
 
 		generator := &fakeShortcodeGen{codes: []string{""}}
-		svc := NewService(
+		svc := application.NewService(
 			store,
 			&fakeVisitsStore{},
 			generator,
@@ -219,7 +221,7 @@ func TestCreateLink(t *testing.T) {
 
 		_, err := svc.CreateLink(t.Context(), params)
 
-		require.ErrorIs(t, err, ErrShortCodeGeneratorInternal)
+		require.ErrorIs(t, err, application.ErrShortCodeGeneratorInternal)
 		require.Equal(t, generator.calls, 1)
 	})
 }

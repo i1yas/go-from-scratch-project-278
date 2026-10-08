@@ -86,13 +86,6 @@ func setupTestRouter(
 	return router
 }
 
-func createValidLink(t *testing.T, id int64, originalURL, code string) links.Link {
-	link, err := links.NewLinkWithID(id, originalURL, code)
-	require.NoError(t, err)
-
-	return link
-}
-
 func createLinks(t *testing.T, ids []int64) []links.Link {
 	result := make([]links.Link, len(ids))
 
@@ -141,24 +134,6 @@ func createVisits(t *testing.T, ids []int64) []links.Visit {
 	}
 
 	return result
-}
-
-func createRange(t *testing.T, from, to int) application.Range {
-	t.Helper()
-
-	r, err := application.NewRange(int32(from), int32(to))
-	require.NoError(t, err)
-
-	return r
-}
-
-func createSort(t *testing.T, sortBy, order string) application.SortOrder {
-	t.Helper()
-
-	sort, err := application.NewSortOrder(sortBy, order)
-	require.NoError(t, err)
-
-	return sort
 }
 
 func loadFixture(t *testing.T, path string) string {

@@ -103,18 +103,6 @@ func withTx(t *testing.T, db *sql.DB, fn func(ctx context.Context, tx *sql.Tx)) 
 	fn(ctx, tx)
 }
 
-func createValidLink(t *testing.T, codeRaw string) links.Link {
-	t.Helper()
-
-	originalURL, err := links.NewURL("https://test.com")
-	require.NoError(t, err)
-
-	code, err := links.NewShortCode(codeRaw)
-	require.NoError(t, err)
-
-	return links.Link{OriginalURL: originalURL, ShortCode: code}
-}
-
 func linksCodes(linkItems []links.Link) []links.ShortCode {
 	codes := make([]links.ShortCode, len(linkItems))
 
