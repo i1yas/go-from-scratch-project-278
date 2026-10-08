@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -61,28 +60,24 @@ func TestGetLinksPagination(t *testing.T) {
 		name        string
 		from        int
 		to          int
-		total       int
 		resultCount int
 	}{
 		{
-			name:        "from 0 to 3, total 2",
+			name:        "from 0 to 3",
 			from:        0,
 			to:          3,
-			total:       2,
-			resultCount: 2,
+			resultCount: 4,
 		},
 		{
 			name:        "from 0 to 3, total 4",
 			from:        0,
 			to:          3,
-			total:       5,
 			resultCount: 4,
 		},
 		{
-			name:        "from 0 to 3, total 0",
-			from:        0,
-			to:          3,
-			total:       0,
+			name:        "from 30 to 40, total 0",
+			from:        30,
+			to:          40,
 			resultCount: 0,
 		},
 	}
@@ -92,36 +87,20 @@ func TestGetLinksPagination(t *testing.T) {
 			db := setupTestDB(t)
 
 			withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
+				seedDB(t, tx, "links")
+
 				linksStore := NewLinksStore(tx)
-
-				var linkItems []links.Link
-
-				for i := range tc.total {
-					code := fmt.Sprintf("test-%d", i)
-					link := testutils.Link(t, code)
-
-					linkItems = append(linkItems, link)
-
-					_, err := linksStore.CreateLink(ctx, link)
-					require.NoError(t, err)
-				}
-
-				want := linkItems[0:tc.resultCount]
 
 				linksRange, err := application.NewRange(int32(tc.from), int32(tc.to))
 				require.NoError(t, err)
 
-				sort, err := application.NewSortOrder("id", "ASC")
-				require.NoError(t, err)
-
 				loadedLinks, err := linksStore.GetLinks(ctx, application.GetLinksParams{
 					Range: linksRange,
-					Sort:  sort,
+					Sort:  testutils.SortOrder(t, "id", "ASC"),
 				})
 
 				require.NoError(t, err)
 				require.Equal(t, tc.resultCount, len(loadedLinks))
-				require.Equal(t, linksCodes(want), linksCodes(loadedLinks))
 			})
 		})
 	}

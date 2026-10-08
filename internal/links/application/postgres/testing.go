@@ -103,16 +103,6 @@ func withTx(t *testing.T, db *sql.DB, fn func(ctx context.Context, tx *sql.Tx)) 
 	fn(ctx, tx)
 }
 
-func linksCodes(linkItems []links.Link) []links.ShortCode {
-	codes := make([]links.ShortCode, len(linkItems))
-
-	for i, link := range linkItems {
-		codes[i] = link.ShortCode
-	}
-
-	return codes
-}
-
 func linksIDs(linkItems []links.Link) []int64 {
 	ids := make([]int64, len(linkItems))
 
