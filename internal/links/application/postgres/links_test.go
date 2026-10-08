@@ -469,6 +469,13 @@ func TestErrorInvalidStoreValue(t *testing.T) {
 		_, err = linksStore.GetLinkByID(ctx, createdLink.ID)
 		require.ErrorIs(t, err, application.ErrInvalidStoreValue)
 		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
+
+		_, err = linksStore.GetLinks(ctx, application.GetLinksParams{
+			Range: testutils.Range(t, 0, 4),
+			Sort:  testutils.SortOrder(t, "id", "ASC"),
+		})
+		require.ErrorIs(t, err, application.ErrInvalidStoreValue)
+		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
 	})
 }
 
