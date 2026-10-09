@@ -36,11 +36,13 @@ func (s *Service) ResolveLink(ctx context.Context, params ResolveLinkParams) (li
 		params.Status,
 	)
 	if err != nil {
-		return links.URL(""), err
+		// TODO: change to propper logger
+		log.Printf("failed to record visit: %v", err)
 	}
 
 	err = s.visits.CreateVisit(ctx, visit)
 	if err != nil {
+		// TODO: change to propper logger
 		log.Printf("failed to record visit: %v", err)
 	}
 
