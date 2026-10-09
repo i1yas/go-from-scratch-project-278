@@ -1,6 +1,7 @@
 package apiapp
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"net/http"
@@ -11,11 +12,10 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
 
 	"hexleturlshort/internal/config"
+	"hexleturlshort/internal/database/testutils"
 )
 
 func TestApp(t *testing.T) {
@@ -245,35 +245,20 @@ func setupTestDB(t *testing.T) (string, *sql.DB) {
 
 	ctx := t.Context()
 
-	container, err := postgres.Run(
-		ctx,
-		"postgres:16-alpine",
-		postgres.WithDatabase("hexlet-shorturl-test-db"),
-		postgres.WithUsername("postgres"),
-		postgres.WithPassword("postgres"),
-		postgres.BasicWaitStrategies(),
-	)
+	pg, err := testutils.SetupTestPostgres(ctx)
 	require.NoError(t, err)
 
-	connString, err := container.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
-
-	db, err := sql.Open("pgx", connString)
-	require.NoError(t, err)
-
-	require.NoError(t, db.PingContext(ctx))
-
-	require.NoError(t, goose.SetDialect("postgres"))
-
-	migrations := migrationsDir(t)
-	require.NoError(t, goose.Up(db, migrations))
+	require.NoError(t, pg.Migrate(migrationsDir(t)))
 
 	t.Cleanup(func() {
-		err := db.Close()
+		err := pg.DB.Close()
+		require.NoError(t, err)
+
+		err = pg.Container.Terminate(context.Background())
 		require.NoError(t, err)
 	})
 
-	return connString, db
+	return pg.URL, pg.DB
 }
 
 func migrationsDir(t *testing.T) string {
