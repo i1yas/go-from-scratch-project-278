@@ -437,9 +437,3 @@ func TestErrorInteralStore(t *testing.T) {
 		require.ErrorIs(t, err, application.ErrStoreInternal)
 	})
 }
-
-func TestMain(m *testing.M) {
-	m.Run()
-
-	stopTestDBContainer()
-}

@@ -10,72 +10,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
 
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application/postgres/sqlcgen"
 )
 
-var testDBContainer *postgres.PostgresContainer
-
-func setupTestDB(t *testing.T) *sql.DB {
-	t.Helper()
-
-	ctx := t.Context()
-
-	if testDBContainer == nil {
-		container, err := postgres.Run(
-			ctx,
-			"postgres:16-alpine",
-			postgres.WithDatabase("hexlet-shorturl-test-db"),
-			postgres.WithUsername("postgres"),
-			postgres.WithPassword("postgres"),
-			postgres.BasicWaitStrategies(),
-		)
-		require.NoError(t, err)
-
-		testDBContainer = container
-	}
-
-	connString, err := testDBContainer.ConnectionString(ctx, "sslmode=disable")
-	require.NoError(t, err)
-
-	db, err := sql.Open("pgx", connString)
-	require.NoError(t, err)
-
-	require.NoError(t, db.PingContext(ctx))
-
-	require.NoError(t, goose.SetDialect("postgres"))
-
-	migrations := migrationsDir(t)
-	require.NoError(t, goose.Up(db, migrations))
-
-	t.Cleanup(func() {
-		err := db.Close()
-		require.NoError(t, err)
-	})
-
-	return db
-}
-
-func stopTestDBContainer() {
-	if testDBContainer != nil {
-		err := testDBContainer.Terminate(context.Background())
-		if err != nil {
-			log.Fatal("failed to stop test db container")
-		}
-	}
-}
-
 // migrationsDir returns path to migrations relative to this file
-func migrationsDir(t *testing.T) string {
-	t.Helper()
-
+func migrationsDir() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("failed to build path to migrations")
+		log.Fatal("failed to build path to migrations")
 	}
 
 	return filepath.Join(
