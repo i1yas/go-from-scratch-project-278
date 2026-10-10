@@ -35,12 +35,12 @@ func TestSmoke(t *testing.T) {
 		ctx := t.Context()
 
 		cmd := exec.CommandContext(ctx, binaryPath)
-		cmd.Env = append(cmd.Env,
+		cmd.Env = []string{
 			"ENV=production",
-			"DATABASE_URL="+dbURL,
-			"BASE_URL="+baseURL,
-			"HTTP_ADDR="+addr,
-		)
+			"DATABASE_URL=" + dbURL,
+			"APP_BASE_URL=" + baseURL,
+			"HTTP_ADDR=" + addr,
+		}
 
 		err := cmd.Start()
 		require.NoError(t, err)
@@ -60,12 +60,12 @@ func TestSmoke(t *testing.T) {
 		ctx := t.Context()
 
 		cmd := exec.CommandContext(ctx, binaryPath)
-		cmd.Env = append(cmd.Env,
+		cmd.Env = []string{
 			"ENV=production",
 			"DATABASE_URL=postgres://test:test@localhost:9999/unknown-db?sslmode=disable",
-			"BASE_URL="+baseURL,
-			"HTTP_ADDR="+addr,
-		)
+			"APP_BASE_URL=" + baseURL,
+			"HTTP_ADDR=" + addr,
+		}
 
 		stderr, err := runCommand(cmd)
 
@@ -77,12 +77,12 @@ func TestSmoke(t *testing.T) {
 		ctx := t.Context()
 
 		cmd := exec.CommandContext(ctx, binaryPath)
-		cmd.Env = append(cmd.Env,
+		cmd.Env = []string{
 			"ENV=production",
-			"DATABASE_URL="+dbURL,
-			"BASE_URL="+baseURL,
+			"DATABASE_URL=" + dbURL,
+			"APP_BASE_URL=" + baseURL,
 			"HTTP_ADDR=invalid",
-		)
+		}
 
 		var errOut bytes.Buffer
 
@@ -98,13 +98,13 @@ func TestSmoke(t *testing.T) {
 		ctx := t.Context()
 
 		cmd := exec.CommandContext(ctx, binaryPath)
-		cmd.Env = append(cmd.Env,
+		cmd.Env = []string{
 			"ENV=production",
-			"DATABASE_URL="+dbURL,
-			"BASE_URL="+baseURL,
-			"HTTP_ADDR="+addr,
+			"DATABASE_URL=" + dbURL,
+			"APP_BASE_URL=" + baseURL,
+			"HTTP_ADDR=" + addr,
 			"SENTRY_DSN=invalid",
-		)
+		}
 
 		stderr, err := runCommand(cmd)
 
