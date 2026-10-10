@@ -87,7 +87,7 @@ func (h *LinksHandler) CreateLink(c *gin.Context) {
 	var request createLinkRequest
 
 	if err := c.ShouldBindBodyWithJSON(&request); err != nil {
-		handleError(c, ErrInvalidJSON)
+		handleError(c, fmt.Errorf("%w: %w", ErrInvalidBody, err))
 		return
 	}
 
@@ -156,7 +156,7 @@ func (h *LinksHandler) UpdateLink(c *gin.Context) {
 	var request updateLinkRequest
 
 	if err := c.ShouldBindBodyWithJSON(&request); err != nil {
-		handleError(c, ErrInvalidJSON)
+		handleError(c, fmt.Errorf("%w: %w", ErrInvalidBody, err))
 		return
 	}
 

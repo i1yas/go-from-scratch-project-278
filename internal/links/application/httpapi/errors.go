@@ -13,7 +13,7 @@ import (
 
 var (
 	ErrInvalidID    = errors.New("invalid id")
-	ErrInvalidJSON  = errors.New("invalid json")
+	ErrInvalidBody  = errors.New("invalid body")
 	ErrInvalidQuery = errors.New("invalid query")
 )
 
@@ -36,9 +36,9 @@ var errorsMappings = []errorResponse{
 		Error:       "invalid query",
 	},
 	{
-		originalErr: ErrInvalidJSON,
+		originalErr: ErrInvalidBody,
 		status:      http.StatusBadRequest,
-		Error:       "invalid json",
+		Error:       "invalid request",
 	},
 	{
 		originalErr: application.ErrInvalidRange,

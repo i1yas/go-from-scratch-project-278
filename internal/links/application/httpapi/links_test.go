@@ -397,11 +397,11 @@ func TestCreateLink(t *testing.T) {
 			}`,
 		},
 		{
-			name:        "error invalid json",
+			name:        "error invalid request",
 			requestBody: `}{`,
 			setup:       func(_ *fakeLinkService) {},
 			wantStatus:  400,
-			wantBody:    `{"error": "invalid json"}`,
+			wantBody:    `{"error": "invalid request"}`,
 		},
 		{
 			name: "internal error",
@@ -557,12 +557,12 @@ func TestUpdateLink(t *testing.T) {
 			}`,
 		},
 		{
-			name:        "error invalid json",
+			name:        "error invalid request",
 			url:         "/api/links/101",
 			requestBody: `}{`,
 			setup:       func(_ *fakeLinkService) {},
 			wantStatus:  400,
-			wantBody:    `{"error": "invalid json"}`,
+			wantBody:    `{"error": "invalid request"}`,
 		},
 		{
 			name: "internal error",
