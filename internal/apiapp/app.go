@@ -46,6 +46,11 @@ type App struct {
 
 // New wires application components and them in App struct
 func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, error) {
+	baseURL, err := links.NewURL(cfg.App.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidBaseURL, err)
+	}
+
 	db, err := database.OpenPostgres(ctx, cfg.Database)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFailedToOpenDB, err)
@@ -61,11 +66,6 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 		visitsStore,
 		codeGenerator,
 	)
-
-	baseURL, err := links.NewURL(cfg.App.BaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidBaseURL, err)
-	}
 
 	linksHandler := httpapi.NewLinksHandler(service, baseURL)
 	visitsHandler := httpapi.NewVisitsHandler(service, baseURL)
