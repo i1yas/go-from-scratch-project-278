@@ -79,7 +79,7 @@ func readEnvConfig(fallback Environment) Environment {
 
 func readAppConfig() App {
 	return App{
-		BaseURL: os.Getenv("APP_BASE_URL"),
+		BaseURL: os.Getenv("BASE_URL"),
 	}
 }
 

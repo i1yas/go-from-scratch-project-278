@@ -38,7 +38,7 @@ func TestSmoke(t *testing.T) {
 		cmd.Env = []string{
 			"ENV=production",
 			"DATABASE_URL=" + dbURL,
-			"APP_BASE_URL=" + baseURL,
+			"BASE_URL=" + baseURL,
 			"HTTP_ADDR=" + addr,
 		}
 
@@ -63,7 +63,7 @@ func TestSmoke(t *testing.T) {
 		cmd.Env = []string{
 			"ENV=production",
 			"DATABASE_URL=postgres://test:test@localhost:9999/unknown-db?sslmode=disable",
-			"APP_BASE_URL=" + baseURL,
+			"BASE_URL=" + baseURL,
 			"HTTP_ADDR=" + addr,
 		}
 
@@ -80,7 +80,7 @@ func TestSmoke(t *testing.T) {
 		cmd.Env = []string{
 			"ENV=production",
 			"DATABASE_URL=" + dbURL,
-			"APP_BASE_URL=" + baseURL,
+			"BASE_URL=" + baseURL,
 			"HTTP_ADDR=invalid",
 		}
 
@@ -101,7 +101,7 @@ func TestSmoke(t *testing.T) {
 		cmd.Env = []string{
 			"ENV=production",
 			"DATABASE_URL=" + dbURL,
-			"APP_BASE_URL=" + baseURL,
+			"BASE_URL=" + baseURL,
 			"HTTP_ADDR=" + addr,
 			"SENTRY_DSN=invalid",
 		}
