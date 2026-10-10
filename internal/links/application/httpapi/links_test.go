@@ -317,7 +317,7 @@ func TestCreateLink(t *testing.T) {
 						nil,
 					)
 			},
-			wantStatus: 200,
+			wantStatus: 201,
 			wantBody: `{
 				"id": 101,
 				"original_url": "http://domain101.com",
@@ -344,7 +344,7 @@ func TestCreateLink(t *testing.T) {
 						nil,
 					)
 			},
-			wantStatus: 200,
+			wantStatus: 201,
 			wantBody: `{
 				"id": 101,
 				"original_url": "http://domain101.com",

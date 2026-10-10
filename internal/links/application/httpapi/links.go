@@ -106,7 +106,7 @@ func (h *LinksHandler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusCreated, response)
 }
 
 // GetLinkByID handles request for getting link by id
