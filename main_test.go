@@ -114,15 +114,15 @@ func TestSmoke(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
 	tempDir, err := os.MkdirTemp("", "hexlet-shorturl-smoketest-*")
 	if err != nil {
 		log.Fatalf("Failed to create temp dir: %s", err.Error())
 	}
 
-	bin, err := buildTestingBinary(tempDir)
+	buildCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	bin, err := buildTestingBinary(buildCtx, tempDir)
 	if err != nil {
 		log.Fatalf("Failed to build binary: %s", err.Error())
 	}
@@ -136,7 +136,7 @@ func TestMain(m *testing.M) {
 
 	binaryPath = bin
 
-	pg, err := testutils.SetupTestPostgres(ctx)
+	pg, err := testutils.SetupTestPostgres(context.Background())
 	if err != nil {
 		log.Fatalf("Failed to setup test db: %v", err)
 	}
@@ -154,9 +154,9 @@ func TestMain(m *testing.M) {
 	}
 }
 
-func buildTestingBinary(dir string) (string, error) {
+func buildTestingBinary(ctx context.Context, dir string) (string, error) {
 	bin := filepath.Join(dir, "bin")
-	cmd := exec.Command("go", "build", "-o", bin, ".")
+	cmd := exec.CommandContext(ctx, "go", "build", "-o", bin, ".")
 
 	err := cmd.Run()
 	if err != nil {
