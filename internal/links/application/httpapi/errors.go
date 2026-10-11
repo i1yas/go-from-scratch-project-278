@@ -2,9 +2,11 @@ package httpapi
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 
 	"hexleturlshort/internal/links"
@@ -85,12 +87,10 @@ var internalErrors = []error{
 	application.ErrShortCodeGeneratorInternal,
 }
 
-func handleError(c *gin.Context, err error) {
+func handleError(logger *slog.Logger, c *gin.Context, err error) {
 	for _, internalErr := range internalErrors {
 		if errors.Is(err, internalErr) {
-			c.Status(500)
-			reportError(c, err)
-
+			handleInternalError(logger, c, err)
 			return
 		}
 	}
@@ -112,7 +112,15 @@ func handleError(c *gin.Context, err error) {
 		}
 	}
 
+	handleInternalError(logger, c, err)
+}
+
+func handleInternalError(logger *slog.Logger, c *gin.Context, err error) {
 	c.Status(500)
+	logger.Error("internal error",
+		slog.String("request_id", requestid.Get(c)),
+		slog.String("error", err.Error()),
+	)
 	reportError(c, err)
 }
 

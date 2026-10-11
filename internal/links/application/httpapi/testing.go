@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
@@ -77,8 +78,11 @@ func setupTestRouter(
 	visitsSvc *fakeVisitsService,
 ) *gin.Engine {
 	baseURL := testingBaseURL(t)
-	linksHandler := NewLinksHandler(linksSvc, baseURL)
-	visitsHandler := NewVisitsHandler(visitsSvc, baseURL)
+
+	discardLogger := slog.New(slog.DiscardHandler)
+
+	linksHandler := NewLinksHandler(linksSvc, baseURL, discardLogger)
+	visitsHandler := NewVisitsHandler(visitsSvc, baseURL, discardLogger)
 	router := gin.New()
 
 	RegisterRoutes(router, linksHandler, visitsHandler)

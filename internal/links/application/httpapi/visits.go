@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -14,11 +15,12 @@ import (
 type VisitsHandler struct {
 	baseURL links.URL
 	s       visitsService
+	logger  *slog.Logger
 }
 
 // NewVisitsHandler creates VisitsHandler
-func NewVisitsHandler(service visitsService, baseURL links.URL) *VisitsHandler {
-	return &VisitsHandler{s: service, baseURL: baseURL}
+func NewVisitsHandler(service visitsService, baseURL links.URL, logger *slog.Logger) *VisitsHandler {
+	return &VisitsHandler{s: service, baseURL: baseURL, logger: logger}
 }
 
 // GetVisits lists recorded visits
@@ -27,7 +29,7 @@ func (h *VisitsHandler) GetVisits(c *gin.Context) {
 
 	rang, err := parseRange(c.Query("range"), application.Range{From: 0, To: 4})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -36,7 +38,7 @@ func (h *VisitsHandler) GetVisits(c *gin.Context) {
 		Order:  application.OrderASC,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -45,7 +47,7 @@ func (h *VisitsHandler) GetVisits(c *gin.Context) {
 		Sort:  sort,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -62,6 +64,10 @@ func (h *VisitsHandler) GetVisits(c *gin.Context) {
 		totalCount: result.Total,
 	}))
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *VisitsHandler) handleError(c *gin.Context, err error) {
+	handleError(h.logger, c, err)
 }
 
 type visitResponse struct {

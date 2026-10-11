@@ -67,8 +67,8 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 		codeGenerator,
 	)
 
-	linksHandler := httpapi.NewLinksHandler(service, baseURL)
-	visitsHandler := httpapi.NewVisitsHandler(service, baseURL)
+	linksHandler := httpapi.NewLinksHandler(service, baseURL, logger)
+	visitsHandler := httpapi.NewVisitsHandler(service, baseURL, logger)
 
 	err = errtrack.InitSentry(errtrack.InitSentryParams{
 		Env:    cfg.Env,

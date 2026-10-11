@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -15,11 +16,12 @@ import (
 type LinksHandler struct {
 	baseURL links.URL
 	s       linkService
+	logger  *slog.Logger
 }
 
 // NewLinksHandler creates LinksHandler
-func NewLinksHandler(service linkService, baseURL links.URL) *LinksHandler {
-	return &LinksHandler{s: service, baseURL: baseURL}
+func NewLinksHandler(service linkService, baseURL links.URL, logger *slog.Logger) *LinksHandler {
+	return &LinksHandler{s: service, baseURL: baseURL, logger: logger}
 }
 
 // GetLinks handles request for listing links
@@ -31,7 +33,7 @@ func (h *LinksHandler) GetLinks(c *gin.Context) {
 		To:   4,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -40,7 +42,7 @@ func (h *LinksHandler) GetLinks(c *gin.Context) {
 		Order:  application.OrderASC,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -49,7 +51,7 @@ func (h *LinksHandler) GetLinks(c *gin.Context) {
 		Sort:  sort,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -59,7 +61,7 @@ func (h *LinksHandler) GetLinks(c *gin.Context) {
 	for i, link := range linkItems {
 		respItem, err := convertToLinkResponse(link, h.baseURL)
 		if err != nil {
-			handleError(c, err)
+			h.handleError(c, err)
 			return
 		}
 
@@ -87,7 +89,7 @@ func (h *LinksHandler) CreateLink(c *gin.Context) {
 	var request createLinkRequest
 
 	if err := c.ShouldBindBodyWithJSON(&request); err != nil {
-		handleError(c, fmt.Errorf("%w: %w", ErrInvalidBody, err))
+		h.handleError(c, fmt.Errorf("%w: %w", ErrInvalidBody, err))
 		return
 	}
 
@@ -96,13 +98,13 @@ func (h *LinksHandler) CreateLink(c *gin.Context) {
 		ShortCode:   request.ShortName,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	response, err := convertToLinkResponse(link, h.baseURL)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -117,19 +119,19 @@ func (h *LinksHandler) GetLinkByID(c *gin.Context) {
 
 	id, err := strconv.ParseInt(idRaw, 10, 64)
 	if err != nil {
-		handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		h.handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
 		return
 	}
 
 	link, err := h.s.GetLinkByID(ctx, id)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	resp, err := convertToLinkResponse(link, h.baseURL)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -149,14 +151,14 @@ func (h *LinksHandler) UpdateLink(c *gin.Context) {
 
 	id, err := strconv.ParseInt(idRaw, 10, 64)
 	if err != nil {
-		handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		h.handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
 		return
 	}
 
 	var request updateLinkRequest
 
 	if err := c.ShouldBindBodyWithJSON(&request); err != nil {
-		handleError(c, fmt.Errorf("%w: %w", ErrInvalidBody, err))
+		h.handleError(c, fmt.Errorf("%w: %w", ErrInvalidBody, err))
 		return
 	}
 
@@ -166,13 +168,13 @@ func (h *LinksHandler) UpdateLink(c *gin.Context) {
 		ShortCode:   request.ShortName,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	response, err := convertToLinkResponse(link, h.baseURL)
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -187,12 +189,12 @@ func (h *LinksHandler) DeleteLink(c *gin.Context) {
 
 	id, err := strconv.ParseInt(idRaw, 10, 64)
 	if err != nil {
-		handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
+		h.handleError(c, fmt.Errorf("%w: %w", ErrInvalidID, err))
 		return
 	}
 
 	if err := h.s.DeleteLink(ctx, id); err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
@@ -215,11 +217,15 @@ func (h *LinksHandler) ResolveLink(c *gin.Context) {
 		Status:    status,
 	})
 	if err != nil {
-		handleError(c, err)
+		h.handleError(c, err)
 		return
 	}
 
 	c.Redirect(status, string(originalURL))
+}
+
+func (h *LinksHandler) handleError(c *gin.Context, err error) {
+	handleError(h.logger, c, err)
 }
 
 type linkResponse struct {
