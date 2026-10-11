@@ -90,8 +90,13 @@ func readDBConfig() Database {
 }
 
 func readHTTPConfig() HTTP {
+	addr := os.Getenv("HTTP_ADDR")
+	if addr == "" {
+		addr = ":8080"
+	}
+
 	return HTTP{
-		Addr: os.Getenv("HTTP_ADDR"),
+		Addr: addr,
 	}
 }
 
