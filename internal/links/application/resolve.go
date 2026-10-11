@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"hexleturlshort/internal/links"
 )
@@ -36,14 +36,16 @@ func (s *Service) ResolveLink(ctx context.Context, params ResolveLinkParams) (li
 		params.Status,
 	)
 	if err != nil {
-		// TODO: change to propper logger
-		log.Printf("failed to record visit: %v", err)
+		s.logger.Warn("failed to construct visit",
+			slog.String("error", err.Error()),
+		)
 	}
 
 	err = s.visits.CreateVisit(ctx, visit)
 	if err != nil {
-		// TODO: change to propper logger
-		log.Printf("failed to record visit: %v", err)
+		s.logger.Error("failed to record visit",
+			slog.String("error", err.Error()),
+		)
 	}
 
 	return link.OriginalURL, nil
