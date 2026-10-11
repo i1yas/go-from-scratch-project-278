@@ -27,6 +27,7 @@ func TestUpdateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		got, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
@@ -47,6 +48,7 @@ func TestUpdateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
@@ -67,6 +69,7 @@ func TestUpdateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
@@ -93,6 +96,7 @@ func TestUpdateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{
@@ -119,6 +123,7 @@ func TestUpdateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.UpdateLink(t.Context(), application.UpdateLinkParams{

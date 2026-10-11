@@ -65,6 +65,7 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 		linksStore,
 		visitsStore,
 		codeGenerator,
+		logger,
 	)
 
 	linksHandler := httpapi.NewLinksHandler(service, baseURL, logger)

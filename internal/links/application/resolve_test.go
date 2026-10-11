@@ -37,6 +37,7 @@ func TestResolveLink(t *testing.T) {
 			linksStore,
 			visitsStore,
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		got, err := svc.ResolveLink(t.Context(), params)
@@ -71,6 +72,7 @@ func TestResolveLink(t *testing.T) {
 			linksStore,
 			visitsStore,
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		got, err := svc.ResolveLink(t.Context(), params)
@@ -99,6 +101,7 @@ func TestResolveLink(t *testing.T) {
 			linksStore,
 			visitsStore,
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err = svc.ResolveLink(t.Context(), params)
@@ -118,6 +121,7 @@ func TestResolveLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.ResolveLink(t.Context(), params)
@@ -139,6 +143,7 @@ func TestResolveLink(t *testing.T) {
 			linksStore,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.ResolveLink(t.Context(), params)

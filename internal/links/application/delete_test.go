@@ -23,6 +23,7 @@ func TestDeleteLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		err := svc.DeleteLink(t.Context(), id)
@@ -42,6 +43,7 @@ func TestDeleteLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		err := svc.DeleteLink(t.Context(), 101)

@@ -134,7 +134,12 @@ func TestGetLinks(t *testing.T) {
 
 			tc.setup(store)
 
-			svc := application.NewService(store, &fakeVisitsStore{}, &fakeShortcodeGen{})
+			svc := application.NewService(
+				store,
+				&fakeVisitsStore{},
+				&fakeShortcodeGen{},
+				discardLogger(),
+			)
 
 			got, err := svc.GetLinks(t.Context(), application.GetLinksParams{
 				Range: tc.rang,
@@ -166,6 +171,7 @@ func TestGetLinkByID(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		got, err := svc.GetLinkByID(t.Context(), want.ID)
@@ -186,6 +192,7 @@ func TestGetLinkByID(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		_, err := svc.GetLinkByID(t.Context(), 101)

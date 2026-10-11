@@ -117,7 +117,12 @@ func TestGetVisits(t *testing.T) {
 
 			tc.setup(store)
 
-			svc := application.NewService(&fakeLinksStore{}, store, &fakeShortcodeGen{})
+			svc := application.NewService(
+				&fakeLinksStore{},
+				store,
+				&fakeShortcodeGen{},
+				discardLogger(),
+			)
 
 			got, err := svc.GetVisits(t.Context(), application.GetVisitsParams{
 				Range: tc.rang,

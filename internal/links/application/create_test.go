@@ -33,6 +33,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		got, err := svc.CreateLink(t.Context(), params)
@@ -63,6 +64,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		got, err := svc.CreateLink(t.Context(), params)
@@ -102,6 +104,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		got, err := svc.CreateLink(t.Context(), params)
@@ -126,6 +129,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.CreateLink(t.Context(), params)
@@ -149,6 +153,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			&fakeShortcodeGen{},
+			discardLogger(),
 		)
 
 		_, err := svc.CreateLink(t.Context(), params)
@@ -170,6 +175,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		_, err := svc.CreateLink(t.Context(), params)
@@ -195,6 +201,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		_, err := svc.CreateLink(t.Context(), params)
@@ -217,6 +224,7 @@ func TestCreateLink(t *testing.T) {
 			store,
 			&fakeVisitsStore{},
 			generator,
+			discardLogger(),
 		)
 
 		_, err := svc.CreateLink(t.Context(), params)

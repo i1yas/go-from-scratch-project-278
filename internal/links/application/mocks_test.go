@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/stretchr/testify/mock"
 
@@ -84,4 +85,8 @@ func (g *fakeShortcodeGen) Generate() (string, error) {
 	code := g.codes[ind%len(g.codes)]
 
 	return code, nil
+}
+
+func discardLogger() *slog.Logger {
+	return slog.New(slog.DiscardHandler)
 }
