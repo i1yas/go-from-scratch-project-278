@@ -188,6 +188,22 @@ func TestGetLinks(t *testing.T) {
 			wantContentRange: "links 0-4/10",
 		},
 		{
+			name: "sort by short_name remapped to shortcode",
+			url:  `/api/links?sort=["short_name","DESC"]`,
+			setup: func(svc *fakeLinkService) {
+				svc.
+					On("GetLinks", mock.Anything, application.GetLinksParams{
+						Range: testutils.Range(t, 0, 4),
+						Sort:  testutils.SortOrder(t, "shortcode", "DESC"),
+					}).
+					Return(application.LinksResult{
+						Total: 0,
+					}, nil)
+			},
+			wantStatus:       200,
+			wantContentRange: "links 0-0/0",
+		},
+		{
 			name: "sort by shot_url, link from 5th to 7th",
 			url:  `/api/links?range=[5,7]&sort=["short_url","ASC"]`,
 			setup: func(svc *fakeLinkService) {

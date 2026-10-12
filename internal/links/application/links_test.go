@@ -69,23 +69,6 @@ func TestGetLinks(t *testing.T) {
 			err: application.ErrUnsupportedSortOrder,
 		},
 		{
-			name: "short_name remapped to shortcode",
-			rang: testutils.Range(t, 0, 2),
-			sort: testutils.SortOrder(t, "short_name", "ASC"),
-			setup: func(store *fakeLinksStore) {
-				store.
-					On("GetLinksTotalCount", mock.Anything).
-					Return(int64(10), nil).
-					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: testutils.Range(t, 0, 2),
-						Sort:  testutils.SortOrder(t, "shortcode", "ASC"),
-					}).
-					Return(testutils.Links(t, 3), nil)
-			},
-			wantTotal: 10,
-			wantItems: testutils.Links(t, 3),
-		},
-		{
 			name: "short_url remapped to shortcode",
 			rang: testutils.Range(t, 0, 2),
 			sort: testutils.SortOrder(t, "short_url", "ASC"),
