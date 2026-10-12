@@ -14,7 +14,7 @@ var ErrInvlalidURL = errors.New("invalid url")
 // NewURL validates and creates valid URL, or returns error if URL is invalid.
 func NewURL(urlRaw string) (URL, error) {
 	if len(urlRaw) == 0 {
-		return URL(""), ErrInvlalidURL
+		return URL(""), fmt.Errorf("%w: empty url", ErrInvlalidURL)
 	}
 
 	parsed, err := url.Parse(urlRaw)
@@ -26,11 +26,11 @@ func NewURL(urlRaw string) (URL, error) {
 	case "http", "https":
 		break
 	default:
-		return URL(""), ErrInvlalidURL
+		return URL(""), fmt.Errorf("%w: unsupported protocol '%s'", ErrInvlalidURL, parsed.Scheme)
 	}
 
 	if len(parsed.Host) == 0 {
-		return URL(""), ErrInvlalidURL
+		return URL(""), fmt.Errorf("%w: missing host", ErrInvlalidURL)
 	}
 
 	return URL(parsed.String()), nil
