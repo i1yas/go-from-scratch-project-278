@@ -19,7 +19,7 @@ func formatContentRangeHeader(params contentRangeParams) string {
 	return fmt.Sprintf("%s %d-%d/%d",
 		params.itemName,
 		r.From,
-		r.From+int32(params.itemsCount)-1,
+		max(0, r.From+int32(params.itemsCount)-1),
 		params.totalCount,
 	)
 }
