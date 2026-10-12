@@ -46,7 +46,7 @@ func (h *LinksHandler) GetLinks(c *gin.Context) {
 		return
 	}
 
-	mapLinkSortFields(&sort)
+	sort.SortBy = mapFieldFromHTTPtoService(sort.SortBy)
 
 	linksResult, err := h.s.GetLinks(ctx, application.GetLinksParams{
 		Range: linksRange,
@@ -249,10 +249,4 @@ func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, er
 		ShortName:   string(link.ShortCode),
 		ShortURL:    string(shortURL),
 	}, nil
-}
-
-func mapLinkSortFields(sort *application.SortOrder) {
-	if sort.SortBy == "short_name" {
-		sort.SortBy = "shortcode"
-	}
 }

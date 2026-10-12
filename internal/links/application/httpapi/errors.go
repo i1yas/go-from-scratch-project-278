@@ -124,20 +124,11 @@ func handleInternalError(logger *slog.Logger, c *gin.Context, err error) {
 	reportError(c, err)
 }
 
-var fieldMapper = map[string]string{
-	"shortcode": "short_name",
-}
-
 func convertFieldErrorsToMap(errs []links.FieldError) map[string]string {
 	result := make(map[string]string, len(errs))
 
 	for _, ferr := range errs {
-		fieldName := ferr.Field
-
-		mappedField, ok := fieldMapper[fieldName]
-		if ok {
-			fieldName = mappedField
-		}
+		fieldName := mapFieldFromServiceToHTTP(ferr.Field)
 
 		result[fieldName] = ferr.Err.Error()
 	}
