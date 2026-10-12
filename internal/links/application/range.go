@@ -16,15 +16,15 @@ type Range struct {
 // NewRange validates bounds and creates Range
 func NewRange(from, to int32) (Range, error) {
 	if from < 0 {
-		return Range{}, fmt.Errorf("%w: negative 'from'", ErrInvalidRange)
+		return Range{}, fmt.Errorf("%w: negative lower bound", ErrInvalidRange)
 	}
 
 	if to < 0 {
-		return Range{}, fmt.Errorf("%w: negative 'to'", ErrInvalidRange)
+		return Range{}, fmt.Errorf("%w: negative upper bound", ErrInvalidRange)
 	}
 
 	if from > to {
-		return Range{}, fmt.Errorf("%w: 'from' is bigger than 'to'", ErrInvalidRange)
+		return Range{}, fmt.Errorf("%w: lower bound is greater that upper bound", ErrInvalidRange)
 	}
 
 	return Range{From: from, To: to}, nil
