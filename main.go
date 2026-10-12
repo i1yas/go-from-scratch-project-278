@@ -20,11 +20,7 @@ func main() {
 	)
 	defer stop()
 
-	cfg, err := config.ReadFromEnv()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	cfg := config.ReadFromEnv()
 
 	logger := logging.NewSlogLogger(cfg.Env)
 

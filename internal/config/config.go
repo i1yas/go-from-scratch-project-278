@@ -46,24 +46,20 @@ type Config struct {
 	Sentry   Sentry
 }
 
-// TODO: validate configs
-
 // ReadFromEnv reads config from environment and .env file
-func ReadFromEnv() (Config, error) {
+func ReadFromEnv() Config {
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return Config{}, err
+		return Config{}
 	}
 
-	cfg := Config{
+	return Config{
 		Env:      readEnvConfig(EnvDevelopment),
 		App:      readAppConfig(),
 		Database: readDBConfig(),
 		HTTP:     readHTTPConfig(),
 		Sentry:   readSentryConfig(),
 	}
-
-	return cfg, nil
 }
 
 func readEnvConfig(fallback Environment) Environment {

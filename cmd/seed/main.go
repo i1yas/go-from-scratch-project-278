@@ -11,11 +11,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.ReadFromEnv()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read config from env: %v", err)
-		os.Exit(1)
-	}
+	cfg := config.ReadFromEnv()
 
 	db, err := database.OpenPostgres(context.Background(), cfg.Database)
 	if err != nil {
