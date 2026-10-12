@@ -3,7 +3,10 @@
 [![hexlet-check](https://github.com/i1yas/go-from-scratch-project-278/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/i1yas/go-from-scratch-project-278/actions)
 [![Linter and tests](https://github.com/i1yas/go-from-scratch-project-278/actions/workflows/ci.yml/badge.svg)](https://github.com/i1yas/go-from-scratch-project-278/actions/workflows/ci.yml)
 
+
 Приложение формирует короткие ссылки и собирает статистику перехода по ним.
+
+Демо: [go-from-scratch-project-278-uejj.onrender.com](https://go-from-scratch-project-278-uejj.onrender.com/)
 
 ## Стек
 
