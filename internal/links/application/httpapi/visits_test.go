@@ -84,6 +84,22 @@ func TestGetVisits(t *testing.T) {
 			wantContentRange: "visits 0-4/10",
 		},
 		{
+			name: "sort by reffer remapped",
+			url:  `/api/link_visits?sort=["reffer", "ASC"]`,
+			setup: func(svc *fakeVisitsService) {
+				svc.
+					On("GetVisits", mock.Anything, application.GetVisitsParams{
+						Range: testutils.Range(t, 0, 4),
+						Sort:  testutils.SortOrder(t, "referer", "ASC"),
+					}).
+					Return(application.VisitsResult{
+						Total: 0,
+					}, nil)
+			},
+			wantStatus:       200,
+			wantContentRange: "visits 0-0/0",
+		},
+		{
 			name:       "invalid range",
 			url:        "/api/link_visits?range=5,8",
 			setup:      func(*fakeVisitsService) {},

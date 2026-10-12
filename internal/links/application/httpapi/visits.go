@@ -42,6 +42,8 @@ func (h *VisitsHandler) GetVisits(c *gin.Context) {
 		return
 	}
 
+	mapVisitSortFields(&sort)
+
 	result, err := h.s.GetVisits(ctx, application.GetVisitsParams{
 		Range: rang,
 		Sort:  sort,
@@ -89,5 +91,11 @@ func convertToVisitResponse(visit links.Visit) visitResponse {
 		UserAgent: visit.UserAgent,
 		CreatedAt: visit.CreatedAt.UTC().Format(time.RFC3339),
 		Status:    visit.Status,
+	}
+}
+
+func mapVisitSortFields(sort *application.SortOrder) {
+	if sort.SortBy == "reffer" {
+		sort.SortBy = "referer"
 	}
 }

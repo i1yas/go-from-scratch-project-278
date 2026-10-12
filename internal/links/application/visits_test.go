@@ -69,23 +69,6 @@ func TestGetVisits(t *testing.T) {
 			err: application.ErrUnsupportedSortOrder,
 		},
 		{
-			name: "reffer remaped",
-			rang: testutils.Range(t, 0, 2),
-			sort: testutils.SortOrder(t, "reffer", "ASC"),
-			setup: func(store *fakeVisitsStore) {
-				store.
-					On("GetVisitsTotalCount", mock.Anything).
-					Return(int64(10), nil).
-					On("GetVisits", mock.Anything, application.GetVisitsParams{
-						Range: testutils.Range(t, 0, 2),
-						Sort:  testutils.SortOrder(t, "referer", "ASC"),
-					}).
-					Return(testutils.Visits(t, 3), nil)
-			},
-			wantTotal: 10,
-			wantItems: testutils.Visits(t, 3),
-		},
-		{
 			name: "store error on total count",
 			rang: testutils.Range(t, 0, 2),
 			sort: testutils.SortOrder(t, "id", "ASC"),
