@@ -2,7 +2,6 @@ package httpserver
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -60,10 +59,6 @@ func NewServer(router *gin.Engine, cfg config.HTTP) Server {
 // Run runs http.Server in Server
 func (s *Server) Run() error {
 	err := s.srv.ListenAndServe()
-	if errors.Is(err, http.ErrServerClosed) {
-		return nil
-	}
-
 	return err
 }
 
