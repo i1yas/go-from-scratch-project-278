@@ -15,12 +15,10 @@ type UpdateLinkParams struct {
 
 // UpdateLink is use-case for updating link
 func (s *Service) UpdateLink(ctx context.Context, params UpdateLinkParams) (links.Link, error) {
-	link, err := links.NewLink(params.OriginalURL, params.ShortCode)
+	link, err := links.NewLinkWithID(params.ID, params.OriginalURL, params.ShortCode)
 	if err != nil {
 		return links.Link{}, err
 	}
-
-	link.ID = params.ID
 
 	return s.links.UpdateLink(ctx, link)
 }

@@ -180,12 +180,10 @@ func (s *LinksStore) DeleteLink(ctx context.Context, id int64) error {
 }
 
 func convertToLink(dbLink sqlcgen.Link) (links.Link, error) {
-	link, err := links.NewLink(dbLink.OriginalUrl, dbLink.Shortcode)
+	link, err := links.NewLinkWithID(dbLink.ID, dbLink.OriginalUrl, dbLink.Shortcode)
 	if err != nil {
 		return links.Link{}, fmt.Errorf("%w: %w", application.ErrInvalidStoreValue, err)
 	}
-
-	link.ID = dbLink.ID
 
 	return link, nil
 }
