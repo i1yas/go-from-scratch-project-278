@@ -25,20 +25,22 @@ func NewLinksStore(db sqlcgen.DBTX) *LinksStore {
 	return &LinksStore{q: querier, db: db}
 }
 
-var getLinksSupportedSort = map[string]struct{}{
-	"id ASC":            {},
-	"id DESC":           {},
-	"original_url ASC":  {},
-	"original_url DESC": {},
-	"shortcode ASC":     {},
-	"shortcode DESC":    {},
+var getLinksSupportedSort = map[string]string{
+	"id ASC":            "id ASC",
+	"id DESC":           "id DESC",
+	"original_url ASC":  "original_url ASC, id ASC",
+	"original_url DESC": "original_url DESC, id ASC",
+	"shortcode ASC":     "shortcode ASC, id ASC",
+	"shortcode DESC":    "shortcode DESC, id ASC",
+	"short_name ASC":    "shortcode ASC, id ASC",
+	"short_name DESC":   "shortcode DESC, id ASC",
+	"short_url ASC":     "shortcode ASC, id ASC",
+	"short_url DESC":    "shortcode DESC, id ASC",
 }
 
 // GetLinks loads links from store
 func (s *LinksStore) GetLinks(ctx context.Context, params application.GetLinksParams) ([]links.Link, error) {
-	sortOrder := params.Sort.String()
-
-	_, ok := getLinksSupportedSort[sortOrder]
+	sortOrder, ok := getLinksSupportedSort[params.Sort.String()]
 	if !ok {
 		return nil, application.ErrUnsupportedSortOrder
 	}
