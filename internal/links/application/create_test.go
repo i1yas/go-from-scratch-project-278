@@ -185,6 +185,54 @@ func TestCreateLink(t *testing.T) {
 		require.Equal(t, 1, generator.calls)
 	})
 
+	t.Run("invalid original url wihtout shortcode", func(t *testing.T) {
+		store := new(fakeLinksStore)
+
+		params := application.CreateLinkParams{
+			OriginalURL: "",
+		}
+
+		generator := &fakeShortcodeGen{codes: []string{"code"}}
+		svc := application.NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+			discardLogger(),
+		)
+
+		_, err := svc.CreateLink(t.Context(), params)
+
+		require.ErrorIs(t, err, links.ErrInvlalidURL)
+		require.Equal(t, 0, len(store.Calls))
+		require.Equal(t, 1, generator.calls)
+	})
+
+	t.Run("store internal error when shortcode generated", func(t *testing.T) {
+		store := new(fakeLinksStore)
+
+		params := application.CreateLinkParams{
+			OriginalURL: "http://test.com",
+		}
+
+		store.
+			On("CreateLink", mock.Anything, mock.Anything).
+			Return(links.Link{}, application.ErrStoreInternal)
+
+		generator := &fakeShortcodeGen{codes: []string{"code"}}
+		svc := application.NewService(
+			store,
+			&fakeVisitsStore{},
+			generator,
+			discardLogger(),
+		)
+
+		_, err := svc.CreateLink(t.Context(), params)
+
+		require.ErrorIs(t, err, application.ErrStoreInternal)
+		require.Equal(t, 1, len(store.Calls))
+		require.Equal(t, 1, generator.calls)
+	})
+
 	t.Run("failed to generate unique shortcode", func(t *testing.T) {
 		store := new(fakeLinksStore)
 
