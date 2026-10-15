@@ -15,9 +15,6 @@ func convertRangeToLimitOffset(rang application.Range) (int32, int32) {
 	limit := rang.To + 1 - rang.From
 
 	offset := rang.From
-	if rang.From == rang.To {
-		limit = 0
-	}
 
 	return limit, offset
 }
