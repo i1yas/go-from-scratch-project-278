@@ -8,5 +8,5 @@ INSERT INTO links (original_url, shortcode) VALUES
     ('https://go.dev', 'golang'),
     ('https://test.com', 'very-very-long-code-101202303'),
     ('https://test.com', 'TEST'),
-    ('https://example.com', 'example link')
+    ('https://example.com', 'example_link')
 ON CONFLICT DO NOTHING;

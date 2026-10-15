@@ -11,4 +11,4 @@ VALUES
     (7, 'https://go.dev', 'golang'),
     (8, 'https://test.com', 'very-very-long-code-101202303'),
     (9, 'https://test.com', 'TEST'),
-    (10, 'https://example.com', 'example link');
+    (10, 'https://example.com', 'example_link');
