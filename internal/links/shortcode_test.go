@@ -19,6 +19,16 @@ func TestShortCode(t *testing.T) {
 			isValid: true,
 		},
 		{
+			name:    "valid alpha shortcode with upper case",
+			input:   "TEST",
+			isValid: true,
+		},
+		{
+			name:    "valid alpha shortcode with unicode",
+			input:   "тест",
+			isValid: true,
+		},
+		{
 			name:    "valid num shortcode",
 			input:   "123",
 			isValid: true,
@@ -27,6 +37,36 @@ func TestShortCode(t *testing.T) {
 			name:    "valid alphanum shortcode",
 			input:   "test123",
 			isValid: true,
+		},
+		{
+			name:    "valid with non-alphanum characters",
+			input:   "-_.@",
+			isValid: true,
+		},
+		{
+			name:    "invalid with slash",
+			input:   "test/test",
+			isValid: false,
+		},
+		{
+			name:    "invalid with %",
+			input:   "test%test",
+			isValid: false,
+		},
+		{
+			name:    "invalid with #",
+			input:   "test#test",
+			isValid: false,
+		},
+		{
+			name:    "invalid with ?",
+			input:   "test?test",
+			isValid: false,
+		},
+		{
+			name:    "invalid with space",
+			input:   "test test",
+			isValid: false,
 		},
 		{
 			name:    "too short shortcode",
