@@ -82,7 +82,7 @@ func TestParseRange(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := parseRange(tc.input, 100, fallback)
+			got, err := parseRange(tc.input, tc.maxPageSize, fallback)
 
 			require.ErrorIs(t, err, tc.err)
 			require.Equal(t, tc.want, got)
