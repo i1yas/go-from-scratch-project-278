@@ -21,7 +21,7 @@ func CORS(env config.Environment) gin.HandlerFunc {
 		return cors.New(cors.Config{
 			AllowOrigins:     []string{frontendDevOrigin},
 			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-			AllowHeaders:     []string{"Range", "Referer"},
+			AllowHeaders:     []string{"Range", "Referer", "Content-Type"},
 			AllowCredentials: false,
 			MaxAge:           12 * time.Hour,
 		})
