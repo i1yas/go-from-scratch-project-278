@@ -65,7 +65,7 @@ func TestSmoke(t *testing.T) {
 
 		cmd := exec.CommandContext(ctx, binaryPath)
 		cmd.Env = []string{
-			"DATABASE_URL=postgres://test:test@localhost:9999/unknown-db?sslmode=disable",
+			"DATABASE_URL=" + dbURL,
 			"BASE_URL=" + baseURL,
 			"HTTP_ADDR=" + addr,
 		}
