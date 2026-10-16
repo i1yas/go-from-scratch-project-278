@@ -8,8 +8,18 @@ import (
 )
 
 var (
-	ErrInvalidVisit = errors.New("invalid visit")
-	ErrInvalidIP    = errors.New("invalid IP address")
+	ErrInvalidVisit     = errors.New("invalid visit")
+	ErrInvalidIP        = errors.New("invalid IP address")
+	ErrInvalidReferer   = errors.New("invalid referer")
+	ErrInvalidUserAgent = errors.New("invalid user-agent")
+)
+
+const (
+	minRefererLength = 0
+	maxRefererLength = 255
+
+	minUserAgentLength = 0
+	maxUserAgentLength = 255
 )
 
 // Visit contains info about link visit
@@ -34,6 +44,16 @@ func NewVisit(
 	parsedIP, err := netip.ParseAddr(ip)
 	if err != nil {
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidIP, err)
+	}
+
+	err = validateStringLength(referer, minRefererLength, maxRefererLength)
+	if err != nil {
+		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidReferer, err)
+	}
+
+	err = validateStringLength(userAgent, minUserAgentLength, maxUserAgentLength)
+	if err != nil {
+		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidUserAgent, err)
 	}
 
 	return Visit{

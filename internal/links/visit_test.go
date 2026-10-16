@@ -2,6 +2,7 @@ package links
 
 import (
 	"net/netip"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ func TestNewVisit(t *testing.T) {
 		userAgent string
 		status    int
 		want      Visit
-		err       error
+		errs      []error
 	}{
 		{
 			name:    "valid visit with IP v4",
@@ -57,6 +58,28 @@ func TestNewVisit(t *testing.T) {
 				Status:  302,
 			},
 		},
+		{
+			name:    "invalid ip",
+			ip:      "1.1",
+			referer: "http://mysite",
+			status:  302,
+			errs:    []error{ErrInvalidVisit, ErrInvalidIP},
+		},
+		{
+			name:    "invalid referer",
+			ip:      "10.11.12.13",
+			referer: "http://" + strings.Repeat("x", maxRefererLength),
+			status:  302,
+			errs:    []error{ErrInvalidVisit, ErrInvalidReferer},
+		},
+		{
+			name:      "invalid user-agent",
+			ip:        "10.11.12.13",
+			referer:   "http://mysite",
+			userAgent: strings.Repeat("x", maxUserAgentLength+1),
+			status:    302,
+			errs:      []error{ErrInvalidVisit, ErrInvalidUserAgent},
+		},
 	}
 
 	for _, tc := range cases {
@@ -69,7 +92,10 @@ func TestNewVisit(t *testing.T) {
 				tc.status,
 			)
 
-			require.ErrorIs(t, err, tc.err)
+			for _, wantErr := range tc.errs {
+				require.ErrorIs(t, err, wantErr)
+			}
+
 			require.Equal(t, tc.want, got)
 		})
 	}
