@@ -32,6 +32,9 @@ func TestSmoke(t *testing.T) {
 	host := "http://" + addr
 	baseURL := "http://example.com"
 
+	// NOTE: avoid reading .env from project root
+	t.Chdir(t.TempDir())
+
 	t.Run("main routes", func(t *testing.T) {
 		ctx := t.Context()
 
