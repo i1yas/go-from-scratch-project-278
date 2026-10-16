@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -121,7 +122,7 @@ func (app *App) Run(ctx context.Context) error {
 	)
 
 	err := app.Server.Run()
-	if err != nil {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("%w: %w", ErrFailedToStartServer, err)
 	}
 
