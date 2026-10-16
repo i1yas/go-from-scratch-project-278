@@ -32,3 +32,8 @@ func NewRange(from, to int32) (Range, error) {
 
 	return Range{From: from, To: to}, nil
 }
+
+// Size calculates amount of elements in range
+func (r Range) Size() int32 {
+	return r.To + 1 - r.From
+}
