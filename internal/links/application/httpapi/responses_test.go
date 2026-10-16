@@ -45,14 +45,24 @@ func TestFormatContentRangeHeader(t *testing.T) {
 			want: "items 5-8/10",
 		},
 		{
-			name: "first 5 items, got none",
+			name: "first 5 items, got none of 0",
 			params: contentRangeParams{
 				itemName:   "items",
 				itemsRange: testutils.Range(t, 0, 4),
 				itemsCount: 0,
 				totalCount: 0,
 			},
-			want: "items 0-0/0",
+			want: "items */0",
+		},
+		{
+			name: "from 800 to 810 items, got none of 10",
+			params: contentRangeParams{
+				itemName:   "items",
+				itemsRange: testutils.Range(t, 800, 810),
+				itemsCount: 0,
+				totalCount: 10,
+			},
+			want: "items */10",
 		},
 	}
 

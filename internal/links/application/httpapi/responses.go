@@ -16,6 +16,13 @@ type contentRangeParams struct {
 func formatContentRangeHeader(params contentRangeParams) string {
 	r := params.itemsRange
 
+	if params.itemsCount == 0 {
+		return fmt.Sprintf("%s */%d",
+			params.itemName,
+			params.totalCount,
+		)
+	}
+
 	return fmt.Sprintf("%s %d-%d/%d",
 		params.itemName,
 		r.From,

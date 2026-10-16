@@ -201,7 +201,7 @@ func TestGetLinks(t *testing.T) {
 					}, nil)
 			},
 			wantStatus:       200,
-			wantContentRange: "links 0-0/0",
+			wantContentRange: "links */0",
 		},
 		{
 			name: "sort by shot_url, link from 5th to 7th",

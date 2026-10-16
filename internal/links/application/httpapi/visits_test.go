@@ -97,7 +97,7 @@ func TestGetVisits(t *testing.T) {
 					}, nil)
 			},
 			wantStatus:       200,
-			wantContentRange: "visits 0-0/0",
+			wantContentRange: "visits */0",
 		},
 		{
 			name:       "invalid range",
