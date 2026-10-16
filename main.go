@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -28,11 +29,17 @@ func main() {
 
 	logger := logging.NewSlogLogger(cfg.Env)
 
+	logger.Info("creating apiapp",
+		slog.String("environment", string(cfg.Env)),
+	)
+
 	app, err := apiapp.New(ctx, cfg, logger)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+
+	logger.Info("starting apiapp")
 
 	err = app.Run(ctx)
 	if err != nil {

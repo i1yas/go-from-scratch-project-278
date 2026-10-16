@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -51,6 +50,8 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 		return nil, fmt.Errorf("%w: %w", ErrInvalidBaseURL, err)
 	}
 
+	logger.Info("open postgres")
+
 	db, err := database.OpenPostgres(ctx, cfg.Database)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFailedToOpenDB, err)
@@ -70,6 +71,8 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 
 	linksHandler := httpapi.NewLinksHandler(service, baseURL, logger)
 	visitsHandler := httpapi.NewVisitsHandler(service, baseURL, logger)
+
+	logger.Info("init senry")
 
 	err = errtrack.InitSentry(errtrack.InitSentryParams{
 		Env:    cfg.Env,
@@ -116,9 +119,15 @@ func (app *App) Run(ctx context.Context) error {
 
 		err := app.Server.Shutdown(shutdownCtx)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "falied to shutdown server: %v\n", err)
+			app.Logger.Error("failed to shutdown server",
+				slog.String("error", err.Error()),
+			)
 		}
 	}()
+
+	app.Logger.Info("starting server",
+		slog.String("addr", app.Cfg.HTTP.Addr),
+	)
 
 	err := app.Server.Run()
 	if err != nil {
@@ -138,6 +147,8 @@ func (app *App) Stop(ctx context.Context) {
 
 	err := app.Server.Shutdown(shutdownCtx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "falied to shutdown server: %v\n", err)
+		app.Logger.Error("failed to shutdown server",
+			slog.String("error", err.Error()),
+		)
 	}
 }
