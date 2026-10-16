@@ -28,8 +28,14 @@ func (s *Service) ResolveLink(ctx context.Context, params ResolveLinkParams) (li
 		return links.URL(""), err
 	}
 
+	s.recordVisit(ctx, link.ID, params)
+
+	return link.OriginalURL, nil
+}
+
+func (s *Service) recordVisit(ctx context.Context, linkID int64, params ResolveLinkParams) {
 	visit, err := links.NewVisit(
-		link.ID,
+		linkID,
 		params.IP,
 		params.Referer,
 		params.UserAgent,
@@ -39,6 +45,8 @@ func (s *Service) ResolveLink(ctx context.Context, params ResolveLinkParams) (li
 		s.logger.Warn("failed to construct visit",
 			slog.String("error", err.Error()),
 		)
+
+		return
 	}
 
 	err = s.visits.CreateVisit(ctx, visit)
@@ -46,7 +54,7 @@ func (s *Service) ResolveLink(ctx context.Context, params ResolveLinkParams) (li
 		s.logger.Error("failed to record visit",
 			slog.String("error", err.Error()),
 		)
-	}
 
-	return link.OriginalURL, nil
+		return
+	}
 }
