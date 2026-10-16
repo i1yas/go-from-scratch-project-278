@@ -43,7 +43,7 @@ func parseSort(raw string, defaultSort application.SortOrder) (application.SortO
 	}
 
 	if len(sortItems) < 2 {
-		return defaultSort, nil
+		return application.SortOrder{}, fmt.Errorf("%w: invalid sort format", ErrInvalidQuery)
 	}
 
 	return application.NewSortOrder(sortItems[0], sortItems[1])

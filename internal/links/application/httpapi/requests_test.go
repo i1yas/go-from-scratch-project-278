@@ -112,6 +112,11 @@ func TestParseSort(t *testing.T) {
 			err:   application.ErrInvalidSortOrder,
 		},
 		{
+			name:  "missing element",
+			input: `["name"]`,
+			err:   ErrInvalidQuery,
+		},
+		{
 			name:  "invalid format",
 			input: "id,ASC",
 			err:   ErrInvalidQuery,
