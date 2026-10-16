@@ -27,10 +27,12 @@ func nullString(s string) sql.NullString {
 }
 
 func addrToPgInet(addr netip.Addr) pqtype.Inet {
+	bits := addr.BitLen()
+
 	return pqtype.Inet{
 		IPNet: net.IPNet{
 			IP:   net.IP(addr.AsSlice()),
-			Mask: net.IPMask{0, 0, 0, 0},
+			Mask: net.CIDRMask(bits, bits),
 		},
 		Valid: true,
 	}

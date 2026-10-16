@@ -334,6 +334,14 @@ func TestCreateVisit(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	visitWithIPv6, err := links.NewVisit(
+		1,
+		"2001:db8::1",
+		"http://test.com",
+		"user-agent",
+		302,
+	)
+
 	cases := []struct {
 		name  string
 		input links.Visit
@@ -345,6 +353,10 @@ func TestCreateVisit(t *testing.T) {
 		{
 			name:  "without optional fields",
 			input: visitWithoutOptionals,
+		},
+		{
+			name:  "with ipv6",
+			input: visitWithIPv6,
 		},
 	}
 
