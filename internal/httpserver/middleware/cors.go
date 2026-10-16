@@ -14,10 +14,8 @@ const frontendDevOrigin = "http://localhost:5173"
 // CORS configures CORS policies
 func CORS(env config.Environment) gin.HandlerFunc {
 	switch env {
-	case config.EnvProduction:
-		// NOTE: no CORS allowed in production
-		return func(*gin.Context) {}
-	default:
+	case config.EnvDevelopment:
+		// NOTE: CORS enabled only in development
 		return cors.New(cors.Config{
 			AllowOrigins:     []string{frontendDevOrigin},
 			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
@@ -25,5 +23,7 @@ func CORS(env config.Environment) gin.HandlerFunc {
 			AllowCredentials: false,
 			MaxAge:           12 * time.Hour,
 		})
+	default:
+		return func(*gin.Context) {}
 	}
 }
