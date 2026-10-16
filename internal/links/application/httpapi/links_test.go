@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -222,6 +223,13 @@ func TestGetLinks(t *testing.T) {
 			wantStatus:       200,
 			wantBody:         loadResponseFixture(t, "get_links?range=[5,7]&sort=[short_url,ASC]"),
 			wantContentRange: "links 5-7/10",
+		},
+		{
+			name:       "range is too big",
+			url:        fmt.Sprintf(`/api/links?range=[0,%d]`, maxGetLinksPageSize),
+			setup:      func(*fakeLinkService) {},
+			wantStatus: 400,
+			wantBody:   `{"error":"range is too big"}`,
 		},
 		{
 			name:       "invalid range",

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -98,6 +99,13 @@ func TestGetVisits(t *testing.T) {
 			},
 			wantStatus:       200,
 			wantContentRange: "visits */0",
+		},
+		{
+			name:       "range is too big",
+			url:        fmt.Sprintf(`/api/link_visits?range=[0,%d]`, maxGetVisitsPageSize),
+			setup:      func(*fakeVisitsService) {},
+			wantStatus: 400,
+			wantBody:   `{"error":"range is too big"}`,
 		},
 		{
 			name:       "invalid range",
