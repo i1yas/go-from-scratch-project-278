@@ -151,4 +151,10 @@ func (app *App) Stop(ctx context.Context) {
 			slog.String("error", err.Error()),
 		)
 	}
+	err = app.DB.Close()
+	if err != nil {
+		app.Logger.Error("failed to shutdown postgres",
+			slog.String("error", err.Error()),
+		)
+	}
 }
