@@ -180,11 +180,6 @@ func TestGetVisitsSort(t *testing.T) {
 				})
 				require.NoError(t, err)
 
-				// if tc.sortBy == "link_id" {
-				// 	fmt.Printf("sort=%v, got=%v\n", sort, got)
-				// 	t.Fatal("DEBUG")
-				// }
-
 				require.Equal(t, len(tc.wantItems), len(got))
 				require.Equal(t, tc.wantItems, visitsIDs(got))
 			})
