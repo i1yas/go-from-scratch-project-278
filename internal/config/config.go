@@ -2,9 +2,15 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/joho/godotenv"
+)
+
+var (
+	ErrFailedToReadDotenv = errors.New("failed to read .env file")
+	ErrUnsupportedEnv     = errors.New("unsupported environment")
 )
 
 // Environment of application
@@ -47,29 +53,38 @@ type Config struct {
 }
 
 // ReadFromEnv reads config from environment and .env file
-func ReadFromEnv() Config {
+func ReadFromEnv() (Config, error) {
 	err := godotenv.Load()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return Config{}
+		return Config{}, fmt.Errorf("%w: %w",
+			ErrFailedToReadDotenv, err,
+		)
+	}
+
+	env, err := readEnvConfig()
+	if err != nil {
+		return Config{}, err
 	}
 
 	return Config{
-		Env:      readEnvConfig(EnvDevelopment),
+		Env:      env,
 		App:      readAppConfig(),
 		Database: readDBConfig(),
 		HTTP:     readHTTPConfig(),
 		Sentry:   readSentryConfig(),
-	}
+	}, nil
 }
 
-func readEnvConfig(fallback Environment) Environment {
+func readEnvConfig() (Environment, error) {
 	env := Environment(os.Getenv("ENV"))
 
 	switch env {
 	case EnvDevelopment, EnvProduction:
-		return env
+		return env, nil
 	default:
-		return fallback
+		return Environment(""), fmt.Errorf("%w: '%s'",
+			ErrUnsupportedEnv, env,
+		)
 	}
 }
 

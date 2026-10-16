@@ -86,7 +86,7 @@ curl --get host/api/links \
 Окружение приложения, возможные значения:
 
 - `production` - боевой режим
-- `development` - режим разработки (по умолчанию)
+- `development` - режим разработки
 
 ### `BASE_URL`
 

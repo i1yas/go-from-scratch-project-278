@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"hexleturlshort/internal/apiapp"
+	"hexleturlshort/internal/config"
 	"hexleturlshort/internal/database/testutils"
 )
 
@@ -54,6 +55,22 @@ func TestSmoke(t *testing.T) {
 		requireStatus(t, http.StatusOK, host+"/api/link_visits")
 
 		requireStatus(t, http.StatusNotFound, host+"/r/unknown-link")
+	})
+
+	t.Run("env not specified", func(t *testing.T) {
+		ctx := t.Context()
+
+		cmd := exec.CommandContext(ctx, binaryPath)
+		cmd.Env = []string{
+			"DATABASE_URL=postgres://test:test@localhost:9999/unknown-db?sslmode=disable",
+			"BASE_URL=" + baseURL,
+			"HTTP_ADDR=" + addr,
+		}
+
+		stderr, err := runCommand(cmd)
+
+		require.Error(t, err)
+		require.Contains(t, stderr, config.ErrUnsupportedEnv.Error())
 	})
 
 	t.Run("error db down", func(t *testing.T) {
