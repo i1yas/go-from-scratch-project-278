@@ -12,7 +12,7 @@ import (
 
 func convertRangeToLimitOffset(rang application.Range) (int32, int32) {
 	// NOTE: upper bound is inclusive
-	limit := rang.To + 1 - rang.From
+	limit := rang.Size()
 
 	offset := rang.From
 
