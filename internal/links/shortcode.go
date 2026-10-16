@@ -18,16 +18,10 @@ const (
 
 // NewShortCode validates and creates valid shortcode
 func NewShortCode(codeRaw string) (ShortCode, error) {
-	l := len(codeRaw)
-
-	if l < shortcodeMinLength {
-		return ShortCode(""), fmt.Errorf("%w: too short, min length is %d",
-			ErrInvlalidShortCode, shortcodeMinLength)
-	}
-
-	if l > shortcodeMaxLength {
-		return ShortCode(""), fmt.Errorf("%w: too long, max length is %d",
-			ErrInvlalidShortCode, shortcodeMaxLength)
+	err := validateStringLength(codeRaw, shortcodeMinLength, shortcodeMaxLength)
+	if err != nil {
+		return ShortCode(""), fmt.Errorf("%w: %w",
+			ErrInvlalidShortCode, err)
 	}
 
 	for _, r := range codeRaw {

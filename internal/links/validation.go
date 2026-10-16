@@ -64,3 +64,15 @@ func (v *ValidationError) err() error {
 
 	return v
 }
+
+func validateStringLength(s string, minLength, maxLength int) error {
+	if len(s) < minLength {
+		return fmt.Errorf("too short, min length is %d", minLength)
+	}
+
+	if len(s) > maxLength {
+		return fmt.Errorf("too long, max length is %d", maxLength)
+	}
+
+	return nil
+}
