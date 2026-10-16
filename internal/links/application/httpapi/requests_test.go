@@ -48,6 +48,11 @@ func TestParseRange(t *testing.T) {
 			err:   application.ErrInvalidRange,
 		},
 		{
+			name:  "uppper bound missing",
+			input: "[0]",
+			err:   ErrInvalidQuery,
+		},
+		{
 			name:  "invalid format",
 			input: "1,2",
 			err:   ErrInvalidQuery,

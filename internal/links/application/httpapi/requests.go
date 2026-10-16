@@ -22,7 +22,7 @@ func parseRange(raw string, defaultRange application.Range) (application.Range, 
 	}
 
 	if len(rangeItems) < 2 {
-		return defaultRange, nil
+		return application.Range{}, fmt.Errorf("%w: invalid range format", ErrInvalidQuery)
 	}
 
 	return application.NewRange(rangeItems[0], rangeItems[1])
