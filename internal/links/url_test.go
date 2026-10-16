@@ -1,6 +1,7 @@
 package links
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -25,6 +26,11 @@ func TestURL(t *testing.T) {
 		{
 			name:    "empty url is invalid",
 			input:   "",
+			isValid: false,
+		},
+		{
+			name:    "url is too long",
+			input:   "http://" + strings.Repeat("x", urlMaxLength),
 			isValid: false,
 		},
 		{
