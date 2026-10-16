@@ -49,6 +49,43 @@ func TestResolveLink(t *testing.T) {
 		visitsStore.AssertExpectations(t)
 	})
 
+	t.Run("resolve works on visit construction failure", func(t *testing.T) {
+		linksStore := new(fakeLinksStore)
+		visitsStore := new(fakeVisitsStore)
+
+		paramsWithMissingIP := application.ResolveLinkParams{
+			Code:      "test",
+			IP:        "",
+			Referer:   "",
+			UserAgent: "",
+			Status:    302,
+		}
+
+		code, err := links.NewShortCode(paramsWithMissingIP.Code)
+		require.NoError(t, err)
+
+		wantLink := testutils.Link(t, paramsWithMissingIP.Code)
+
+		linksStore.
+			On("GetLinkByCode", mock.Anything, code).
+			Return(wantLink, nil)
+
+		svc := application.NewService(
+			linksStore,
+			visitsStore,
+			&fakeShortcodeGen{},
+			discardLogger(),
+		)
+
+		got, err := svc.ResolveLink(t.Context(), paramsWithMissingIP)
+
+		require.NoError(t, err)
+		require.Equal(t, wantLink.OriginalURL, got)
+
+		linksStore.AssertExpectations(t)
+		visitsStore.AssertExpectations(t)
+	})
+
 	t.Run("resolve works on visit recording failure", func(t *testing.T) {
 		linksStore := new(fakeLinksStore)
 		visitsStore := new(fakeVisitsStore)
