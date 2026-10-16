@@ -12,6 +12,8 @@ import (
 	"hexleturlshort/internal/links/application"
 )
 
+const maxGetLinksPageSize int32 = 2000
+
 // LinksHandler handles HTTP requests related to links
 type LinksHandler struct {
 	baseURL links.URL
@@ -28,7 +30,7 @@ func NewLinksHandler(service linkService, baseURL links.URL, logger *slog.Logger
 func (h *LinksHandler) GetLinks(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	linksRange, err := parseRange(c.Query("range"), application.Range{
+	linksRange, err := parseRange(c.Query("range"), maxGetLinksPageSize, application.Range{
 		From: 0,
 		To:   4,
 	})

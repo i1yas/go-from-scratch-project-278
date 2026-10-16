@@ -11,6 +11,8 @@ import (
 	"hexleturlshort/internal/links/application"
 )
 
+const maxGetVisitsPageSize = 2000
+
 // VisitsHandler handles HTTP requests related to links
 type VisitsHandler struct {
 	baseURL links.URL
@@ -27,7 +29,7 @@ func NewVisitsHandler(service visitsService, baseURL links.URL, logger *slog.Log
 func (h *VisitsHandler) GetVisits(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	rang, err := parseRange(c.Query("range"), application.Range{From: 0, To: 4})
+	rang, err := parseRange(c.Query("range"), maxGetVisitsPageSize, application.Range{From: 0, To: 4})
 	if err != nil {
 		h.handleError(c, err)
 		return

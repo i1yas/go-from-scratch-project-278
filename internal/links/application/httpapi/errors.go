@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	ErrInvalidID    = errors.New("invalid id")
-	ErrInvalidBody  = errors.New("invalid body")
-	ErrInvalidQuery = errors.New("invalid query")
+	ErrInvalidID     = errors.New("invalid id")
+	ErrInvalidBody   = errors.New("invalid body")
+	ErrInvalidQuery  = errors.New("invalid query")
+	ErrRangeIsTooBig = errors.New("range is too big")
 )
 
 type errorResponse struct {
@@ -46,6 +47,11 @@ var errorsMappings = []errorResponse{
 		originalErr: application.ErrInvalidRange,
 		status:      http.StatusBadRequest,
 		Error:       "invalid range",
+	},
+	{
+		originalErr: ErrRangeIsTooBig,
+		status:      http.StatusBadRequest,
+		Error:       "range is too big",
 	},
 	{
 		originalErr: application.ErrInvalidSortOrder,

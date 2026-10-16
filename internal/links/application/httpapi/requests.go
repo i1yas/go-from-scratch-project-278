@@ -7,7 +7,7 @@ import (
 	"hexleturlshort/internal/links/application"
 )
 
-func parseRange(raw string, defaultRange application.Range) (application.Range, error) {
+func parseRange(raw string, maxSize int32, defaultRange application.Range) (application.Range, error) {
 	if raw == "" {
 		return defaultRange, nil
 	}
@@ -25,7 +25,16 @@ func parseRange(raw string, defaultRange application.Range) (application.Range, 
 		return application.Range{}, fmt.Errorf("%w: invalid range format", ErrInvalidQuery)
 	}
 
-	return application.NewRange(rangeItems[0], rangeItems[1])
+	rang, err := application.NewRange(rangeItems[0], rangeItems[1])
+	if err != nil {
+		return application.Range{}, err
+	}
+
+	if rang.Size() > maxSize {
+		return application.Range{}, fmt.Errorf("%w: max size is %d", ErrRangeIsTooBig, maxSize)
+	}
+
+	return rang, nil
 }
 
 func parseSort(raw string, defaultSort application.SortOrder) (application.SortOrder, error) {
