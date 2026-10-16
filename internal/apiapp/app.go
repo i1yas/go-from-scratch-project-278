@@ -111,18 +111,9 @@ func (app *App) Run(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 
-		shutdownCtx, cancel := context.WithTimeout(
-			context.Background(),
-			time.Second*10,
-		)
-		defer cancel()
+		app.Logger.Info("shutting down apiapp")
 
-		err := app.Server.Shutdown(shutdownCtx)
-		if err != nil {
-			app.Logger.Error("failed to shutdown server",
-				slog.String("error", err.Error()),
-			)
-		}
+		app.Stop(ctx)
 	}()
 
 	app.Logger.Info("starting server",
@@ -145,12 +136,17 @@ func (app *App) Stop(ctx context.Context) {
 	)
 	defer cancel()
 
+	app.Logger.Info("shutting down server")
+
 	err := app.Server.Shutdown(shutdownCtx)
 	if err != nil {
 		app.Logger.Error("failed to shutdown server",
 			slog.String("error", err.Error()),
 		)
 	}
+
+	app.Logger.Info("closing postgres")
+
 	err = app.DB.Close()
 	if err != nil {
 		app.Logger.Error("failed to shutdown postgres",
