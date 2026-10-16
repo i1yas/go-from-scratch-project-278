@@ -1,6 +1,7 @@
 package application
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,6 +49,18 @@ func TestNewRange(t *testing.T) {
 			name: "error from 5 to 3",
 			from: 5,
 			to:   3,
+			err:  ErrInvalidRange,
+		},
+		{
+			name: "error from 0 to maxInt32",
+			from: 0,
+			to:   math.MaxInt32,
+			err:  ErrInvalidRange,
+		},
+		{
+			name: "error from 0 to maxInt32",
+			from: math.MaxInt32,
+			to:   math.MaxInt32,
 			err:  ErrInvalidRange,
 		},
 	}
