@@ -79,6 +79,8 @@ func readEnvConfig() (Environment, error) {
 	env := Environment(os.Getenv("ENV"))
 
 	switch env {
+	case Environment(""):
+		return EnvDevelopment, nil
 	case EnvDevelopment, EnvProduction:
 		return env, nil
 	default:

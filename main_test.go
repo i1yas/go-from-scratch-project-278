@@ -60,11 +60,12 @@ func TestSmoke(t *testing.T) {
 		requireStatus(t, http.StatusNotFound, host+"/r/unknown-link")
 	})
 
-	t.Run("env not specified", func(t *testing.T) {
+	t.Run("error unsupported env", func(t *testing.T) {
 		ctx := t.Context()
 
 		cmd := exec.CommandContext(ctx, binaryPath)
 		cmd.Env = []string{
+			"ENV=unknown",
 			"DATABASE_URL=" + dbURL,
 			"BASE_URL=" + baseURL,
 			"HTTP_ADDR=" + addr,
