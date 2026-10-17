@@ -63,6 +63,18 @@ func TestGetLinksPagination(t *testing.T) {
 		resultCount int
 	}{
 		{
+			name:        "first link",
+			from:        0,
+			to:          0,
+			resultCount: 1,
+		},
+		{
+			name:        "second link",
+			from:        1,
+			to:          1,
+			resultCount: 1,
+		},
+		{
 			name:        "from 0 to 3",
 			from:        0,
 			to:          3,

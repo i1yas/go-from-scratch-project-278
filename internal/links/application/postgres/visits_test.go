@@ -20,6 +20,16 @@ func TestGetVisitsRange(t *testing.T) {
 		wantItems []int64
 	}{
 		{
+			name:      "first visit",
+			rang:      testutils.Range(t, 0, 0),
+			wantItems: []int64{1},
+		},
+		{
+			name:      "second visit",
+			rang:      testutils.Range(t, 1, 1),
+			wantItems: []int64{2},
+		},
+		{
 			name:      "start, from 0 to 10",
 			rang:      testutils.Range(t, 0, 9),
 			wantItems: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
