@@ -1,12 +1,14 @@
 package apiapp
 
 import (
+	"bytes"
 	"context"
-	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -18,171 +20,185 @@ import (
 	"hexleturlshort/internal/database/testutils"
 )
 
-func TestApp(t *testing.T) {
-	dbURL, db := setupTestDB(t)
+func TestApp_HappyPath(t *testing.T) {
+	dbURL := setupTestDB(t)
 
-	seedDB(t, db, "links")
-	seedDB(t, db, "visits")
+	ctx := t.Context()
 
-	t.Run("main api routes work", func(t *testing.T) {
-		cases := []struct {
-			name       string
-			method     string
-			url        string
-			wantStatus int
-			wantBody   string
-		}{
-			{
-				name:       "first two links",
-				method:     "GET",
-				url:        `/api/links?range=[0,1]&sort["id","ASC"]`,
-				wantStatus: 200,
-				wantBody: `[
-					{
-						"id": 1,
-						"short_name": "google",
-						"short_url": "http://example.com/r/google",
-						"original_url": "https://google.com"
-					},
-					{
-						"id": 2,
-						"short_name": "yandex",
-						"short_url": "http://example.com/r/yandex",
-						"original_url": "https://yandex.ru"
-					}
-				]`,
-			},
-			{
-				name:       "link by id",
-				method:     "GET",
-				url:        `/api/links/1`,
-				wantStatus: 200,
-				wantBody: `{
-					"id": 1,
-					"short_name": "google",
-					"short_url": "http://example.com/r/google",
-					"original_url": "https://google.com"
-				}`,
-			},
-			{
-				name:       "link by id not found",
-				method:     "GET",
-				url:        `/api/links/999`,
-				wantStatus: 404,
-			},
-			{
-				name:       "first two visits",
-				method:     "GET",
-				url:        `/api/link_visits?range=[0,1]&sort["id","ASC"]`,
-				wantStatus: 200,
-				wantBody: `[
-					{
-						"id": 1,
-						"link_id": 1,
-						"created_at": "2026-09-19T07:56:07Z",
-						"ip": "36.8.244.30",
-						"reffer": "https://example.org/nested/page",
-						"user_agent": "very-very-long-user-agent",
-						"status": 302
-					},
-					{
-						"id": 2,
-						"link_id": 4,
-						"created_at": "2026-08-18T10:36:27Z",
-						"ip": "144.190.53.110",
-						"reffer": "https://example.net/",
-						"user_agent": "very-very-long-user-agent",
-						"status": 302
-					}
-				]`,
-			},
-		}
+	app, err := New(ctx, config.Config{
+		Env: config.EnvProduction,
+		App: config.App{
+			BaseURL: "http://example.com",
+		},
+		Database: config.Database{
+			URL: dbURL,
+		},
+		HTTP: config.HTTP{
+			Addr: ":8080",
+		},
+	}, discardLogger())
+	require.NoError(t, err)
 
-		for _, tc := range cases {
-			t.Run(tc.name, func(t *testing.T) {
-				ctx := t.Context()
+	gin.SetMode(gin.TestMode)
 
-				app, err := New(ctx, config.Config{
-					Env: config.EnvProduction,
-					App: config.App{
-						BaseURL: "http://example.com",
-					},
-					Database: config.Database{
-						URL: dbURL,
-					},
-					HTTP: config.HTTP{
-						Addr: ":8080",
-					},
-				}, discardLogger())
-				require.NoError(t, err)
+	step(t, "ping returns pong", func(t *testing.T) {
+		w := makeRequest(t, app, "GET", "/ping", nil)
+		require.Equal(t, 200, w.Code)
 
-				req, err := http.NewRequest(tc.method, tc.url, nil)
-				require.NoError(t, err)
+		require.Equal(t, "pong", w.Body.String())
+	})
 
-				w := httptest.NewRecorder()
-				app.Router.ServeHTTP(w, req)
+	var createdLink linkDTO
 
-				require.Equal(t, tc.wantStatus, w.Code)
+	step(t, "create and get link", func(t *testing.T) {
+		url := "http://test.com"
+		code := "test"
 
-				if tc.wantBody != "" {
-					require.JSONEq(t, tc.wantBody, w.Body.String())
-				}
-			})
-		}
-
-		t.Run("ping", func(t *testing.T) {
-			ctx := t.Context()
-
-			app, err := New(ctx, config.Config{
-				Env: config.EnvProduction,
-				App: config.App{
-					BaseURL: "http://example.com",
-				},
-				Database: config.Database{
-					URL: dbURL,
-				},
-				HTTP: config.HTTP{
-					Addr: ":8080",
-				},
-			}, discardLogger())
-			require.NoError(t, err)
-
-			req, err := http.NewRequest("GET", "/ping", nil)
-			require.NoError(t, err)
-
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
-
-			require.Equal(t, 200, w.Code)
-			require.Equal(t, "pong", w.Body.String())
+		w := makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
 		})
 
-		t.Run("resolve short link", func(t *testing.T) {
-			ctx := t.Context()
+		require.Equal(t, 201, w.Code)
 
-			app, err := New(ctx, config.Config{
-				Env: config.EnvProduction,
-				App: config.App{
-					BaseURL: "http://example.com",
-				},
-				Database: config.Database{
-					URL: dbURL,
-				},
-				HTTP: config.HTTP{
-					Addr: ":8080",
-				},
-			}, discardLogger())
-			require.NoError(t, err)
+		resp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, resp.OriginalURL)
+		require.Equal(t, code, resp.Shortname)
 
-			req, err := http.NewRequest("GET", "/r/google", nil)
-			require.NoError(t, err)
+		createdLink = resp
 
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
-
-			require.Equal(t, 302, w.Code)
-			require.Equal(t, "https://google.com", w.Header().Get("Location"))
+		w = makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
 		})
+
+		require.Equal(t, 409, w.Code)
+
+		w = makeRequest(t, app, "GET", linkURL(resp.ID), nil)
+
+		require.Equal(t, 200, w.Code)
+
+		getByIDResp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, getByIDResp.OriginalURL)
+		require.Equal(t, code, getByIDResp.Shortname)
+	})
+
+	step(t, "get links", func(t *testing.T) {
+		w := makeRequest(t, app, "GET", "/api/links", nil)
+
+		require.Equal(t, 200, w.Code)
+		require.Equal(t, "links 0-0/1", w.Header().Get("Content-Range"))
+
+		getLinksResp := bodyAsJSON[[]linkDTO](t, w)
+		require.Equal(t, 1, len(getLinksResp))
+		require.Equal(t, createdLink, getLinksResp[0])
+	})
+
+	step(t, "update link", func(t *testing.T) {
+		url := "http://test.com/added-page"
+		code := "test-1"
+
+		w := makeRequest(t, app, "PUT", linkURL(createdLink.ID), linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
+		})
+
+		require.Equal(t, 200, w.Code)
+
+		resp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, resp.OriginalURL)
+		require.Equal(t, code, resp.Shortname)
+
+		createdLink = resp
+
+		w = makeRequest(t, app, "GET", linkURL(resp.ID), nil)
+
+		require.Equal(t, 200, w.Code)
+
+		getByIDResp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, getByIDResp.OriginalURL)
+		require.Equal(t, code, getByIDResp.Shortname)
+	})
+
+	step(t, "resolve link", func(t *testing.T) {
+		clientIP := "1.2.3.4"
+		clientReferer := "http://test-site.com"
+		clientUserAgent := "test-user-agent"
+
+		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+		req, err := http.NewRequest("GET", resolveLinkURL, nil)
+		require.NoError(t, err)
+
+		req.Header.Set(gin.PlatformCloudflare, clientIP)
+		req.Header.Set("Referer", clientReferer)
+		req.Header.Set("User-Agent", clientUserAgent)
+
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
+
+		require.Equal(t, 302, w.Code)
+		require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+		w = makeRequest(t, app, "GET", "/api/link_visits?range[0,10]", nil)
+		require.Equal(t, 200, w.Code)
+		require.Equal(t, "visits 0-0/1", w.Header().Get("Content-Range"))
+
+		visitsResp := bodyAsJSON[[]visitDTO](t, w)
+		require.Equal(t, 1, len(visitsResp))
+
+		gotVisit := visitsResp[0]
+
+		require.Equal(t, createdLink.ID, gotVisit.LinkID)
+		require.Equal(t, clientIP, gotVisit.IP)
+		require.Equal(t, clientReferer, gotVisit.Referer)
+		require.Equal(t, clientUserAgent, gotVisit.UserAgent)
+	})
+
+	step(t, "resolve link without IP, no visit recorded", func(t *testing.T) {
+		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+		req, err := http.NewRequest("GET", resolveLinkURL, nil)
+		require.NoError(t, err)
+
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
+
+		require.Equal(t, 302, w.Code)
+		require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+		w = makeRequest(t, app, "GET", "/api/link_visits?range[0,10]", nil)
+		require.Equal(t, 200, w.Code)
+
+		visitsResp := bodyAsJSON[[]visitDTO](t, w)
+		require.Equal(t, 1, len(visitsResp))
+	})
+
+	step(t, "delete link", func(t *testing.T) {
+		w := makeRequest(t, app, "DELETE", linkURL(createdLink.ID), nil)
+		require.Equal(t, 204, w.Code)
+
+		w = makeRequest(t, app, "GET", linkURL(createdLink.ID), nil)
+		require.Equal(t, 404, w.Code)
+
+		w = makeRequest(t, app, "GET", "/api/link_visits", nil)
+		require.Equal(t, 200, w.Code)
+
+		visitsResp := bodyAsJSON[[]visitDTO](t, w)
+		require.Equal(t, 0, len(visitsResp))
+	})
+}
+
+func TestApp_Errors(t *testing.T) {
+	t.Run("invalid base url", func(t *testing.T) {
+		_, err := New(t.Context(), config.Config{
+			Env: config.EnvProduction,
+			App: config.App{
+				BaseURL: "not-url",
+			},
+			HTTP: config.HTTP{
+				Addr: ":8080",
+			},
+		}, discardLogger())
+		require.ErrorIs(t, err, ErrInvalidBaseURL)
 	})
 
 	t.Run("error no db url", func(t *testing.T) {
@@ -215,6 +231,8 @@ func TestApp(t *testing.T) {
 	})
 
 	t.Run("error invalid Sentry DSN", func(t *testing.T) {
+		dbURL := setupTestDB(t)
+
 		_, err := New(t.Context(), config.Config{
 			Env: config.EnvProduction,
 			Database: config.Database{
@@ -234,13 +252,25 @@ func TestApp(t *testing.T) {
 	})
 }
 
-func TestMain(m *testing.M) {
-	gin.SetMode(gin.TestMode)
-
-	m.Run()
+type linkDTO struct {
+	ID          int64  `json:"id"`
+	OriginalURL string `json:"original_url"`
+	Shortname   string `json:"short_name"`
 }
 
-func setupTestDB(t *testing.T) (string, *sql.DB) {
+type visitDTO struct {
+	ID        int64  `json:"id"`
+	LinkID    int64  `json:"link_id"`
+	IP        string `json:"ip"`
+	Referer   string `json:"reffer"`
+	UserAgent string `json:"user_agent"`
+}
+
+func linkURL(id int64) string {
+	return fmt.Sprintf("/api/links/%d", id)
+}
+
+func setupTestDB(t *testing.T) string {
 	t.Helper()
 
 	ctx := t.Context()
@@ -258,7 +288,41 @@ func setupTestDB(t *testing.T) (string, *sql.DB) {
 		require.NoError(t, err)
 	})
 
-	return pg.URL, pg.DB
+	return pg.URL
+}
+
+func makeRequest(t *testing.T, app *App, method, url string, body any) *httptest.ResponseRecorder {
+	t.Helper()
+
+	var bodyReader io.Reader
+
+	if body != nil {
+		bodyBytes, err := json.Marshal(body)
+		require.NoError(t, err)
+
+		bodyReader = bytes.NewReader(bodyBytes)
+	}
+
+	req, err := http.NewRequest(method, url, bodyReader)
+	require.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	app.Router.ServeHTTP(w, req)
+
+	return w
+}
+
+func bodyAsJSON[T any](t *testing.T, w *httptest.ResponseRecorder) T {
+	t.Helper()
+
+	respRaw := w.Body.Bytes()
+
+	var resp T
+
+	err := json.Unmarshal(respRaw, &resp)
+	require.NoError(t, err)
+
+	return resp
 }
 
 func migrationsDir(t *testing.T) string {
@@ -276,21 +340,13 @@ func migrationsDir(t *testing.T) string {
 	)
 }
 
-func seedDB(t *testing.T, db *sql.DB, name string) {
-	path := filepath.Join("testdata", "seeds", name+".sql")
+// step runs a single step in a sequential test scenario
+func step(t *testing.T, name string, f func(*testing.T)) {
+	t.Helper()
 
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
-
-	query := string(data)
-
-	result, err := db.ExecContext(t.Context(), query)
-	require.NoError(t, err)
-
-	rows, err := result.RowsAffected()
-	require.NoError(t, err)
-
-	require.NotZero(t, rows)
+	if !t.Run(name, f) {
+		t.FailNow()
+	}
 }
 
 func discardLogger() *slog.Logger {
