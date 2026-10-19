@@ -32,8 +32,6 @@ var getLinksSupportedSort = map[string]string{
 	"original_url DESC": "original_url DESC, id ASC",
 	"shortcode ASC":     "shortcode ASC, id ASC",
 	"shortcode DESC":    "shortcode DESC, id ASC",
-	"short_name ASC":    "shortcode ASC, id ASC",
-	"short_name DESC":   "shortcode DESC, id ASC",
 	"short_url ASC":     "shortcode ASC, id ASC",
 	"short_url DESC":    "shortcode DESC, id ASC",
 }

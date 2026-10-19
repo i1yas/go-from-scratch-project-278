@@ -150,18 +150,6 @@ func TestGetLinksSorting(t *testing.T) {
 			wantIDOrder: []int64{2, 5, 8},
 		},
 		{
-			name:        "short_name ASC",
-			sortBy:      "short_name",
-			order:       application.OrderASC,
-			wantIDOrder: []int64{9, 10, 3},
-		},
-		{
-			name:        "short_name DESC",
-			sortBy:      "short_name",
-			order:       application.OrderDESC,
-			wantIDOrder: []int64{2, 5, 8},
-		},
-		{
 			name:        "short_url ASC",
 			sortBy:      "short_url",
 			order:       application.OrderASC,
