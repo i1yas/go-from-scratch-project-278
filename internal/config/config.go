@@ -80,7 +80,7 @@ func readEnvConfig() (Environment, error) {
 
 	switch env {
 	case Environment(""):
-		return EnvDevelopment, nil
+		return EnvProduction, nil
 	case EnvDevelopment, EnvProduction:
 		return env, nil
 	default:
