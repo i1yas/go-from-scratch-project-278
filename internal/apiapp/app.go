@@ -32,16 +32,11 @@ var (
 
 // App contains application components
 type App struct {
-	Cfg           config.Config
-	DB            *sql.DB
-	LinksStore    *postgres.LinksStore
-	VisitsStore   *postgres.VisitsStore
-	CodeGenerator *shortcodegen.Generator
-	Service       *application.Service
-	LinksHandler  *httpapi.LinksHandler
-	Logger        *slog.Logger
-	Router        *gin.Engine
-	Server        httpserver.Server
+	Cfg    config.Config
+	DB     *sql.DB
+	Logger *slog.Logger
+	Router *gin.Engine
+	Server httpserver.Server
 }
 
 // New wires application components and them in App struct
@@ -94,16 +89,11 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 	)
 
 	return &App{
-		Cfg:           cfg,
-		DB:            db,
-		LinksStore:    linksStore,
-		VisitsStore:   visitsStore,
-		CodeGenerator: codeGenerator,
-		Service:       service,
-		LinksHandler:  linksHandler,
-		Logger:        logger,
-		Router:        router,
-		Server:        server,
+		Cfg:    cfg,
+		DB:     db,
+		Logger: logger,
+		Router: router,
+		Server: server,
 	}, nil
 }
 
