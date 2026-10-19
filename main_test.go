@@ -140,7 +140,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Failed to create temp dir: %s", err.Error())
 	}
 
-	buildCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	buildCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	bin, err := buildTestingBinary(buildCtx, tempDir)
