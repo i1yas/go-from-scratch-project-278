@@ -28,34 +28,65 @@ source ./bin/read-dotenv.sh .env.dev  # Выставить переменные 
 make up                               # Запустить контейнер сервера и базу данных в compose
 ```
 
-Приложение будет доступно по адресу `localhost:8080`
+Приложение с веб-интерфейсом и HTTP API будет доступно по адресу `localhost:8080`
 
 ## Использование
 
 Работать с приложением можно через веб-интерфейс либо через HTTP API.
+Ниже примеры работы с HTTP API.
 
-Примеры работы с API, замените `host` на свой адрес:
-
+### Создание короткой ссылки
 ```bash
-# Создание короткой ссылки
-curl -X POST host/api/links \
-    -d '{"original_url":"http://mywebsite.com","short_name":"mywebsite"}'
-# ответ: {"id":1, ..., "short_url": ".../r/mywebsite"}
-
-# Информация о ссылке по id
-curl host/api/links/1
-# ответ: {"id":1, ..., "short_url": ".../r/mywebsite"}
-
-# Первые 10 ссылок
-curl --get host/api/links \
-    -d 'range=[0,9]'
-# ответ: [{"id":1, ..., "short_url": ".../r/mywebsite"}, ...]
-
-# 3 последние ссылки
-curl --get host/api/links \
-    -d 'range=[0,3]' \
-    -d 'sort=["id","DESC"]'
+curl -X POST http://localhost:8080/api/links \
+    -H 'Content-Type: application/json' \
+    -d '{"original_url":"https://google.com","short_name":"google"}'
 ```
+
+Ответ
+```
+HTTP/1.1 201 Created
+Content-Type: application/json
+```
+```json
+{
+    "id": 1,
+    "original_url": "https://google.com",
+    "short_name": "google",
+    "short_url": "http://localhost:8080/r/google"
+}
+```
+
+Теперь можно открыть ссылку [http://localhost:8080/r/google](http://localhost:8080/r/google) в браузере, приложение перенаправит на `https://google.com`
+
+### Изменение ссылки
+```bash
+curl -X PUT http://localhost:8080/api/links/1 \
+    -H 'Content-Type: application/json' \
+    -d '{"original_url":"https://google.com/some-page","short_name":"google"}'
+```
+
+Ответ
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+```json
+{
+    "id": 1,
+    "original_url": "https://google.com/some-page",
+    "short_name": "google",
+    "short_url": "http://localhost:8080/r/google"
+}
+```
+### Удаление ссылки
+```bash
+curl -X DELETE http://localhost:8080/api/links/1
+```
+Ответ
+```
+HTTP/1.1 204 No Content
+```
+Переход по ссылке [http://localhost:8080/r/google](http://localhost:8080/r/google) вернет ответ `404`
 
 ## Разработка
 
