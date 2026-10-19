@@ -3,6 +3,10 @@ module hexleturlshort
 go 1.26.0
 
 require (
+	github.com/getsentry/sentry-go v0.49.0
+	github.com/getsentry/sentry-go/gin v0.49.0
+	github.com/gin-contrib/cors v1.7.9
+	github.com/gin-contrib/requestid v1.0.8
 	github.com/gin-gonic/gin v1.12.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/joho/godotenv v1.5.1
@@ -51,10 +55,6 @@ require (
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
-	github.com/getsentry/sentry-go v0.49.0 // indirect
-	github.com/getsentry/sentry-go/gin v0.49.0 // indirect
-	github.com/gin-contrib/cors v1.7.9 // indirect
-	github.com/gin-contrib/requestid v1.0.8 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.8.0 // indirect
