@@ -13,6 +13,8 @@ import (
 	"hexleturlshort/internal/httpserver/middleware"
 )
 
+const kb int64 = 1024
+
 // Server container http.Server and gin router
 type Server struct {
 	srv    *http.Server
@@ -34,6 +36,7 @@ func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
 			WaitForDelivery: false,
 			Timeout:         5 * time.Second,
 		}),
+		middleware.MaxBodySize(kb),
 		middleware.RequestID(),
 		middleware.Slog(logger),
 		middleware.Timeout(),

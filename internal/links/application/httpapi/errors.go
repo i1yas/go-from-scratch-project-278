@@ -94,6 +94,12 @@ var internalErrors = []error{
 }
 
 func handleError(logger *slog.Logger, c *gin.Context, err error) {
+	ok := errors.As(err, new(*http.MaxBytesError))
+	if ok {
+		c.Status(http.StatusRequestEntityTooLarge)
+		return
+	}
+
 	for _, internalErr := range internalErrors {
 		if errors.Is(err, internalErr) {
 			handleInternalError(logger, c, err)
