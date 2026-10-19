@@ -17,9 +17,11 @@
 ## Установка и запуск
 
 ### Проверьте версию Docker
+
 ```bash
 docker -v
 ```
+
 Требуется версия Docker CLI 18.09+ (наличие команды `compose`).
 
 ### Склонируйте проект
@@ -30,6 +32,7 @@ cd go-from-scratch-project-278
 ```
 
 ### Запустите приложение
+
 ```bash
 source ./bin/read-dotenv.sh .env.dev  # Выставить переменные окружения
 make up                               # Запустить контейнер сервера и базу данных в compose
@@ -43,6 +46,7 @@ make up                               # Запустить контейнер с
 Ниже примеры работы с HTTP API.
 
 ### Создание короткой ссылки
+
 ```bash
 curl -X POST http://localhost:8080/api/links \
     -H 'Content-Type: application/json' \
@@ -50,10 +54,12 @@ curl -X POST http://localhost:8080/api/links \
 ```
 
 Ответ
+
 ```
 HTTP/1.1 201 Created
 Content-Type: application/json
 ```
+
 ```json
 {
     "id": 1,
@@ -66,6 +72,7 @@ Content-Type: application/json
 Теперь можно открыть ссылку [http://localhost:8080/r/google](http://localhost:8080/r/google) в браузере, приложение перенаправит на `https://google.com`
 
 ### Изменение ссылки
+
 ```bash
 curl -X PUT http://localhost:8080/api/links/1 \
     -H 'Content-Type: application/json' \
@@ -73,10 +80,12 @@ curl -X PUT http://localhost:8080/api/links/1 \
 ```
 
 Ответ
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
 ```
+
 ```json
 {
     "id": 1,
@@ -85,14 +94,19 @@ Content-Type: application/json
     "short_url": "http://localhost:8080/r/google"
 }
 ```
+
 ### Удаление ссылки
+
 ```bash
 curl -X DELETE http://localhost:8080/api/links/1
 ```
+
 Ответ
+
 ```
 HTTP/1.1 204 No Content
 ```
+
 Переход по ссылке [http://localhost:8080/r/google](http://localhost:8080/r/google) вернет ответ `404`
 
 ## Разработка
@@ -111,6 +125,7 @@ make run                              # Запустить приложение
 Приложение запущено на порте `8080`
 
 Опционально можно заполнить БД данными
+
 ```bash
 make db-seed
 ```
@@ -126,6 +141,7 @@ make db-up                            # Запустить базу данных
 make db-migrate                       # Прогнать миграции
 make dev                              # Запустить сервер и фронтенд
 ```
+
 - Фронтенд сервер запущен на порте `5173`, на нем доступен веб-интерфейс
 - Приложение запущено на порте `8080`
 
