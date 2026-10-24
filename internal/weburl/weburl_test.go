@@ -24,9 +24,19 @@ func TestParse(t *testing.T) {
 			want:  "https://test.com",
 		},
 		{
+			name:  "basic case with subdomain",
+			input: "https://subtest.test.com",
+			want:  "https://subtest.test.com",
+		},
+		{
 			name:  "host normamlized to lower case",
-			input: "http://TEST.com",
+			input: "http://TEST.COM",
 			want:  "http://test.com",
+		},
+		{
+			name:  "cyrillic host converted to punycode",
+			input: "https://пример.рф/page",
+			want:  "https://xn--e1afmkfd.xn--p1ai/page",
 		},
 		{
 			name:  "url without tld is valid",
@@ -37,6 +47,16 @@ func TestParse(t *testing.T) {
 			name:  "url with port in host is valid",
 			input: "http://localhost:8080",
 			want:  "http://localhost:8080",
+		},
+		{
+			name:  "url with ipv4 is invalid",
+			input: "http://1.2.3.4",
+			err:   ErrFailedToParse,
+		},
+		{
+			name:  "url with ipv6 is invalid",
+			input: "http://2001:db8::1",
+			err:   ErrFailedToParse,
 		},
 		{
 			name:  "url without host is invalid",
