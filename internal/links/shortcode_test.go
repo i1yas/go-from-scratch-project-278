@@ -44,6 +44,16 @@ func TestShortCode(t *testing.T) {
 			isValid: true,
 		},
 		{
+			name:    "valid max len",
+			input:   strings.Repeat("x", shortcodeMaxLength),
+			isValid: true,
+		},
+		{
+			name:    "valid max len with unicode",
+			input:   strings.Repeat("щ", shortcodeMaxLength),
+			isValid: true,
+		},
+		{
 			name:    "invalid with slash",
 			input:   "test/test",
 			isValid: false,
@@ -75,7 +85,7 @@ func TestShortCode(t *testing.T) {
 		},
 		{
 			name:    "too long shortcode",
-			input:   strings.Repeat("a", 33),
+			input:   strings.Repeat("a", shortcodeMaxLength+1),
 			isValid: false,
 		},
 	}
