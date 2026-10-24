@@ -65,24 +65,19 @@ func (s *fakeVisitsService) GetVisits(
 	return args.Get(0).(application.VisitsResult), args.Error(1)
 }
 
-func testingBaseURL(t *testing.T) links.URL {
-	baseURL, err := links.NewURL("http://short")
-	require.NoError(t, err)
-
-	return baseURL
-}
-
 func setupTestRouter(
 	t *testing.T,
 	linksSvc *fakeLinkService,
 	visitsSvc *fakeVisitsService,
 ) *gin.Engine {
-	baseURL := testingBaseURL(t)
+	t.Helper()
+
+	baseURL := "http://short"
 
 	discardLogger := slog.New(slog.DiscardHandler)
 
 	linksHandler := NewLinksHandler(linksSvc, baseURL, discardLogger)
-	visitsHandler := NewVisitsHandler(visitsSvc, baseURL, discardLogger)
+	visitsHandler := NewVisitsHandler(visitsSvc, discardLogger)
 	router := gin.New()
 
 	RegisterRoutes(router, linksHandler, visitsHandler)

@@ -15,7 +15,6 @@ import (
 	"hexleturlshort/internal/database"
 	"hexleturlshort/internal/errtrack"
 	"hexleturlshort/internal/httpserver"
-	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
 	"hexleturlshort/internal/links/application/httpapi"
 	"hexleturlshort/internal/links/application/postgres"
@@ -25,7 +24,6 @@ import (
 var (
 	ErrFailedToOpenDB            = errors.New("failed to open db")
 	ErrFailedToReadConfigFromEnv = errors.New("failed to read config from environment")
-	ErrInvalidBaseURL            = errors.New("invalid base url")
 	ErrFailedToStartServer       = errors.New("failed to start server")
 	ErrFailedToInitSentry        = errors.New("failed to init sentry client")
 )
@@ -41,11 +39,6 @@ type App struct {
 
 // New wires application components and them in App struct
 func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, error) {
-	baseURL, err := links.NewURL(cfg.App.BaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidBaseURL, err)
-	}
-
 	logger.Info("open postgres")
 
 	db, err := database.OpenPostgres(ctx, cfg.Database)
@@ -65,8 +58,8 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 		logger,
 	)
 
-	linksHandler := httpapi.NewLinksHandler(service, baseURL, logger)
-	visitsHandler := httpapi.NewVisitsHandler(service, baseURL, logger)
+	linksHandler := httpapi.NewLinksHandler(service, cfg.App.BaseURL, logger)
+	visitsHandler := httpapi.NewVisitsHandler(service, logger)
 
 	logger.Info("init senry")
 

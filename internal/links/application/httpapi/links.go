@@ -17,13 +17,13 @@ const maxGetLinksPageSize int32 = 2000
 
 // LinksHandler handles HTTP requests related to links
 type LinksHandler struct {
-	baseURL links.URL
+	baseURL string
 	s       linkService
 	logger  *slog.Logger
 }
 
 // NewLinksHandler creates LinksHandler
-func NewLinksHandler(service linkService, baseURL links.URL, logger *slog.Logger) *LinksHandler {
+func NewLinksHandler(service linkService, baseURL string, logger *slog.Logger) *LinksHandler {
 	return &LinksHandler{s: service, baseURL: baseURL, logger: logger}
 }
 
@@ -240,8 +240,8 @@ type linkResponse struct {
 	ShortURL    string `json:"short_url"`
 }
 
-func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, error) {
-	shortURL, err := buildShortURL(string(baseURL), link)
+func convertToLinkResponse(link links.Link, baseURL string) (linkResponse, error) {
+	shortURL, err := buildShortURL(baseURL, link)
 	if err != nil {
 		return linkResponse{}, err
 	}

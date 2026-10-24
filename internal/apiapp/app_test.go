@@ -188,19 +188,6 @@ func TestApp_HappyPath(t *testing.T) {
 }
 
 func TestApp_Errors(t *testing.T) {
-	t.Run("invalid base url", func(t *testing.T) {
-		_, err := New(t.Context(), config.Config{
-			Env: config.EnvProduction,
-			App: config.App{
-				BaseURL: "not-url",
-			},
-			HTTP: config.HTTP{
-				Addr: ":8080",
-			},
-		}, discardLogger())
-		require.ErrorIs(t, err, ErrInvalidBaseURL)
-	})
-
 	t.Run("error no db url", func(t *testing.T) {
 		_, err := New(t.Context(), config.Config{
 			Env: config.EnvProduction,

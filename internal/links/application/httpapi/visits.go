@@ -15,14 +15,13 @@ const maxGetVisitsPageSize = 2000
 
 // VisitsHandler handles HTTP requests related to links
 type VisitsHandler struct {
-	baseURL links.URL
-	s       visitsService
-	logger  *slog.Logger
+	s      visitsService
+	logger *slog.Logger
 }
 
 // NewVisitsHandler creates VisitsHandler
-func NewVisitsHandler(service visitsService, baseURL links.URL, logger *slog.Logger) *VisitsHandler {
-	return &VisitsHandler{s: service, baseURL: baseURL, logger: logger}
+func NewVisitsHandler(service visitsService, logger *slog.Logger) *VisitsHandler {
+	return &VisitsHandler{s: service, logger: logger}
 }
 
 // GetVisits lists recorded visits
