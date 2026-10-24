@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -240,7 +241,7 @@ type linkResponse struct {
 }
 
 func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, error) {
-	shortURL, err := link.ShortURL(baseURL)
+	shortURL, err := buildShortURL(string(baseURL), link)
 	if err != nil {
 		return linkResponse{}, err
 	}
@@ -251,4 +252,20 @@ func convertToLinkResponse(link links.Link, baseURL links.URL) (linkResponse, er
 		ShortName:   string(link.ShortCode),
 		ShortURL:    string(shortURL),
 	}, nil
+}
+
+func buildShortURL(baseURL string, link links.Link) (string, error) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", err
+	}
+
+	path, err := url.JoinPath("r", string(link.ShortCode))
+	if err != nil {
+		return "", err
+	}
+
+	u.Path = path
+
+	return u.String(), nil
 }
