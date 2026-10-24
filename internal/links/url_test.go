@@ -8,6 +8,9 @@ import (
 )
 
 func TestURL(t *testing.T) {
+	maxLenURL := "http://test/" + strings.Repeat("x", 188)
+	maxLenWithCyrillicHost := "http://пример.рф/" + strings.Repeat("x", 171)
+
 	cases := []struct {
 		name    string
 		input   string
@@ -24,13 +27,33 @@ func TestURL(t *testing.T) {
 			isValid: true,
 		},
 		{
+			name:    "valid url unicode",
+			input:   "https://пример.рф",
+			isValid: true,
+		},
+		{
+			name:    "max length url is valid",
+			input:   maxLenURL,
+			isValid: true,
+		},
+		{
+			name:    "max length url with cyrillic host is valid",
+			input:   maxLenWithCyrillicHost,
+			isValid: true,
+		},
+		{
 			name:    "empty url is invalid",
 			input:   "",
 			isValid: false,
 		},
 		{
 			name:    "url is too long",
-			input:   "http://" + strings.Repeat("x", urlMaxLength),
+			input:   maxLenURL + "x",
+			isValid: false,
+		},
+		{
+			name:    "url with cyrillic host is too long",
+			input:   maxLenWithCyrillicHost + "x",
 			isValid: false,
 		},
 		{
