@@ -187,7 +187,20 @@ func TestApp_HappyPath(t *testing.T) {
 	})
 }
 
-func TestApp_Errors(t *testing.T) {
+func TestApp_StartupErrors(t *testing.T) {
+	t.Run("failed to create short url generator", func(t *testing.T) {
+		_, err := New(t.Context(), config.Config{
+			Env: config.EnvProduction,
+			App: config.App{
+				BaseURL: "invalid",
+			},
+			HTTP: config.HTTP{
+				Addr: ":8080",
+			},
+		}, discardLogger())
+		require.ErrorIs(t, err, ErrFailedToCreateShortURLGen)
+	})
+
 	t.Run("error no db url", func(t *testing.T) {
 		_, err := New(t.Context(), config.Config{
 			Env: config.EnvProduction,
