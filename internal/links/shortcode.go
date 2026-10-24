@@ -18,7 +18,7 @@ const (
 
 // NewShortCode validates and creates valid shortcode
 func NewShortCode(codeRaw string) (ShortCode, error) {
-	err := validateStringLength(codeRaw, shortcodeMinLength, shortcodeMaxLength)
+	err := validateCharactersCount(codeRaw, shortcodeMinLength, shortcodeMaxLength)
 	if err != nil {
 		return ShortCode(""), fmt.Errorf("%w: %w",
 			ErrInvlalidShortCode, err)

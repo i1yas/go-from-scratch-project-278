@@ -26,7 +26,7 @@ func NewURL(urlRaw string) (URL, error) {
 
 	normalizedURL := parsed.String()
 
-	err = validateStringLength(normalizedURL, urlMinLength, urlMaxLength)
+	err = validateCharactersCount(normalizedURL, urlMinLength, urlMaxLength)
 	if err != nil {
 		return URL(""), fmt.Errorf("%w: %w", ErrInvlalidURL, err)
 	}

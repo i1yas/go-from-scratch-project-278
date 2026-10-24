@@ -46,12 +46,12 @@ func NewVisit(
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidIP, err)
 	}
 
-	err = validateStringLength(referer, minRefererLength, maxRefererLength)
+	err = validateCharactersCount(referer, minRefererLength, maxRefererLength)
 	if err != nil {
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidReferer, err)
 	}
 
-	err = validateStringLength(userAgent, minUserAgentLength, maxUserAgentLength)
+	err = validateCharactersCount(userAgent, minUserAgentLength, maxUserAgentLength)
 	if err != nil {
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidUserAgent, err)
 	}

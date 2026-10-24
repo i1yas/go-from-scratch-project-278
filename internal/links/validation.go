@@ -3,6 +3,7 @@ package links
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 // FieldError contains information about field error
@@ -65,12 +66,14 @@ func (v *ValidationError) err() error {
 	return v
 }
 
-func validateStringLength(s string, minLength, maxLength int) error {
-	if len(s) < minLength {
+func validateCharactersCount(s string, minLength, maxLength int) error {
+	l := utf8.RuneCountInString(s)
+
+	if l < minLength {
 		return fmt.Errorf("too short, min length is %d", minLength)
 	}
 
-	if len(s) > maxLength {
+	if l > maxLength {
 		return fmt.Errorf("too long, max length is %d", maxLength)
 	}
 
