@@ -23,7 +23,7 @@ type ShortURLGenerator struct {
 func NewShortURLGenerator(baseURLRaw string) (*ShortURLGenerator, error) {
 	baseURL, err := weburl.Parse(baseURLRaw)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidBaseURL, err)
+		return nil, fmt.Errorf("%w: %w (baseURL=%s)", ErrInvalidBaseURL, err, baseURLRaw)
 	}
 
 	return &ShortURLGenerator{
