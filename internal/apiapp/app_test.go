@@ -201,7 +201,7 @@ func TestApp_StartupErrors(t *testing.T) {
 		require.ErrorIs(t, err, ErrFailedToCreateShortURLGen)
 	})
 
-	t.Run("error no db url", func(t *testing.T) {
+	t.Run("no db url", func(t *testing.T) {
 		_, err := New(t.Context(), config.Config{
 			Env: config.EnvProduction,
 			App: config.App{
@@ -214,7 +214,7 @@ func TestApp_StartupErrors(t *testing.T) {
 		require.ErrorIs(t, err, ErrFailedToOpenDB)
 	})
 
-	t.Run("error db down", func(t *testing.T) {
+	t.Run("db down", func(t *testing.T) {
 		_, err := New(t.Context(), config.Config{
 			Env: config.EnvProduction,
 			Database: config.Database{
@@ -230,7 +230,7 @@ func TestApp_StartupErrors(t *testing.T) {
 		require.ErrorIs(t, err, ErrFailedToOpenDB)
 	})
 
-	t.Run("error invalid Sentry DSN", func(t *testing.T) {
+	t.Run("invalid Sentry DSN", func(t *testing.T) {
 		dbURL := setupTestDB(t)
 
 		_, err := New(t.Context(), config.Config{
