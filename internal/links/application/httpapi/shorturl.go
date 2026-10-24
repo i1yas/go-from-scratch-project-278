@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/weburl"
 )
 
 var (
@@ -21,9 +21,9 @@ type ShortURLGenerator struct {
 
 // NewShortURLGenerator validates base url and creates short url generator
 func NewShortURLGenerator(baseURLRaw string) (*ShortURLGenerator, error) {
-	baseURL, err := parseBaseURL(baseURLRaw)
+	baseURL, err := weburl.Parse(baseURLRaw)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrInvalidBaseURL, err)
 	}
 
 	return &ShortURLGenerator{
@@ -43,22 +43,4 @@ func (g *ShortURLGenerator) Generate(code links.ShortCode) (string, error) {
 	shortURL.Path = path
 
 	return shortURL.String(), nil
-}
-
-func parseBaseURL(baseURLRaw string) (*url.URL, error) {
-	baseURL, err := url.Parse(baseURLRaw)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidBaseURL, err)
-	}
-
-	switch baseURL.Scheme {
-	case "http", "https":
-		break
-	default:
-		return nil, fmt.Errorf("%w: unsupported protocol '%s'", ErrInvalidBaseURL, baseURL.Scheme)
-	}
-
-	baseURL.Host = strings.ToLower(baseURL.Host)
-
-	return baseURL, nil
 }
