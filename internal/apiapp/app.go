@@ -24,6 +24,7 @@ import (
 var (
 	ErrFailedToOpenDB            = errors.New("failed to open db")
 	ErrFailedToReadConfigFromEnv = errors.New("failed to read config from environment")
+	ErrFailedToCreateShortURLGen = errors.New("failed to create short url generator")
 	ErrFailedToStartServer       = errors.New("failed to start server")
 	ErrFailedToInitSentry        = errors.New("failed to init sentry client")
 )
@@ -39,6 +40,11 @@ type App struct {
 
 // New wires application components and them in App struct
 func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, error) {
+	shortURLGen, err := httpapi.NewShortURLGenerator(cfg.App.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrFailedToCreateShortURLGen, err)
+	}
+
 	logger.Info("open postgres")
 
 	db, err := database.OpenPostgres(ctx, cfg.Database)
@@ -58,7 +64,7 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 		logger,
 	)
 
-	linksHandler := httpapi.NewLinksHandler(service, cfg.App.BaseURL, logger)
+	linksHandler := httpapi.NewLinksHandler(service, shortURLGen, logger)
 	visitsHandler := httpapi.NewVisitsHandler(service, logger)
 
 	logger.Info("init senry")

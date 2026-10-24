@@ -70,13 +70,14 @@ func setupTestRouter(
 	linksSvc *fakeLinkService,
 	visitsSvc *fakeVisitsService,
 ) *gin.Engine {
-	t.Helper()
+	const baseURL = "http://short"
 
-	baseURL := "http://short"
+	shortURLGen, err := NewShortURLGenerator(baseURL)
+	require.NoError(t, err)
 
 	discardLogger := slog.New(slog.DiscardHandler)
 
-	linksHandler := NewLinksHandler(linksSvc, baseURL, discardLogger)
+	linksHandler := NewLinksHandler(linksSvc, shortURLGen, discardLogger)
 	visitsHandler := NewVisitsHandler(visitsSvc, discardLogger)
 	router := gin.New()
 

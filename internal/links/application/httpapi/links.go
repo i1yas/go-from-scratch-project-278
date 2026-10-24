@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,14 +16,18 @@ const maxGetLinksPageSize int32 = 2000
 
 // LinksHandler handles HTTP requests related to links
 type LinksHandler struct {
-	baseURL string
-	s       linkService
-	logger  *slog.Logger
+	shortURLGen *ShortURLGenerator
+	s           linkService
+	logger      *slog.Logger
 }
 
 // NewLinksHandler creates LinksHandler
-func NewLinksHandler(service linkService, baseURL string, logger *slog.Logger) *LinksHandler {
-	return &LinksHandler{s: service, baseURL: baseURL, logger: logger}
+func NewLinksHandler(
+	service linkService,
+	shortURLGen *ShortURLGenerator,
+	logger *slog.Logger,
+) *LinksHandler {
+	return &LinksHandler{s: service, shortURLGen: shortURLGen, logger: logger}
 }
 
 // GetLinks handles request for listing links
@@ -64,7 +67,7 @@ func (h *LinksHandler) GetLinks(c *gin.Context) {
 	result := make([]linkResponse, len(linkItems))
 
 	for i, link := range linkItems {
-		respItem, err := convertToLinkResponse(link, h.baseURL)
+		respItem, err := convertToLinkResponse(link, h.shortURLGen)
 		if err != nil {
 			h.handleError(c, err)
 			return
@@ -107,7 +110,7 @@ func (h *LinksHandler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	response, err := convertToLinkResponse(link, h.baseURL)
+	response, err := convertToLinkResponse(link, h.shortURLGen)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -134,7 +137,7 @@ func (h *LinksHandler) GetLinkByID(c *gin.Context) {
 		return
 	}
 
-	resp, err := convertToLinkResponse(link, h.baseURL)
+	resp, err := convertToLinkResponse(link, h.shortURLGen)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -177,7 +180,7 @@ func (h *LinksHandler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	response, err := convertToLinkResponse(link, h.baseURL)
+	response, err := convertToLinkResponse(link, h.shortURLGen)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -240,8 +243,8 @@ type linkResponse struct {
 	ShortURL    string `json:"short_url"`
 }
 
-func convertToLinkResponse(link links.Link, baseURL string) (linkResponse, error) {
-	shortURL, err := buildShortURL(baseURL, link)
+func convertToLinkResponse(link links.Link, shortURLGen *ShortURLGenerator) (linkResponse, error) {
+	shortURL, err := shortURLGen.Generate(link.ShortCode)
 	if err != nil {
 		return linkResponse{}, err
 	}
@@ -252,20 +255,4 @@ func convertToLinkResponse(link links.Link, baseURL string) (linkResponse, error
 		ShortName:   string(link.ShortCode),
 		ShortURL:    string(shortURL),
 	}, nil
-}
-
-func buildShortURL(baseURL string, link links.Link) (string, error) {
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		return "", err
-	}
-
-	path, err := url.JoinPath("r", string(link.ShortCode))
-	if err != nil {
-		return "", err
-	}
-
-	u.Path = path
-
-	return u.String(), nil
 }
