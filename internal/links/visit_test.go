@@ -9,8 +9,11 @@ import (
 )
 
 func TestNewVisit(t *testing.T) {
-	longURL := "http://example.com/" + strings.Repeat("x", 200)
-	longURLWithCyrillicHost := "http://пример.рф/" + strings.Repeat("x", 200)
+	longURL := "http://example.com/" + strings.Repeat("x", 1000)
+	maxURL := string([]rune(longURL)[0:refererMaxLength])
+
+	longURLWithCyrillicHost := "http://пример.рф/" + strings.Repeat("x", 1000)
+	maxURLWithCyrillicHost := string([]rune(longURLWithCyrillicHost)[0:refererMaxLength])
 
 	cases := []struct {
 		name      string
@@ -64,22 +67,22 @@ func TestNewVisit(t *testing.T) {
 		{
 			name:    "valid visit with max len referer",
 			ip:      "10.11.12.13",
-			referer: longURL,
+			referer: maxURL,
 			status:  302,
 			want: Visit{
 				IP:      netip.AddrFrom4([4]byte{10, 11, 12, 13}),
-				Referer: longURL,
+				Referer: maxURL,
 				Status:  302,
 			},
 		},
 		{
 			name:    "valid visit with max len unicode referer",
 			ip:      "10.11.12.13",
-			referer: longURLWithCyrillicHost,
+			referer: maxURLWithCyrillicHost,
 			status:  302,
 			want: Visit{
 				IP:      netip.AddrFrom4([4]byte{10, 11, 12, 13}),
-				Referer: longURLWithCyrillicHost,
+				Referer: maxURLWithCyrillicHost,
 				Status:  302,
 			},
 		},
