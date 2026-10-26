@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/netip"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -321,47 +322,59 @@ func TestGetVisitsTotalCount(t *testing.T) {
 }
 
 func TestCreateVisit(t *testing.T) {
-	visitWithOptionals, err := links.NewVisit(
-		1,
-		"1.2.3.4",
-		"http://test.com",
-		"user-agent",
-		302,
-	)
-	require.NoError(t, err)
+	longURL := "http://example.com/" + strings.Repeat("x", 210)
+	longURLCyrillicHost := "http://пример.рф/" + strings.Repeat("x", 210)
 
-	visitWithoutOptionals, err := links.NewVisit(
-		1,
-		"1.2.3.4",
-		"",
-		"",
-		302,
-	)
-	require.NoError(t, err)
-
-	visitWithIPv6, err := links.NewVisit(
-		1,
-		"2001:db8::1",
-		"http://test.com",
-		"user-agent",
-		302,
-	)
+	longUserAgent := strings.Repeat("x", 220)
+	longUserAgentCyrillic := strings.Repeat("щ", 220)
 
 	cases := []struct {
-		name  string
-		input links.Visit
+		name      string
+		ip        string
+		referer   string
+		userAgent string
+		status    int
 	}{
 		{
-			name:  "with optional fields",
-			input: visitWithOptionals,
+			name:      "with optional fields",
+			ip:        "1.2.3.4",
+			referer:   "http://test.com",
+			userAgent: "user-agent",
+			status:    302,
 		},
 		{
-			name:  "without optional fields",
-			input: visitWithoutOptionals,
+			name:   "without optional fields",
+			ip:     "1.2.3.4",
+			status: 302,
 		},
 		{
-			name:  "with ipv6",
-			input: visitWithIPv6,
+			name:   "with ipv6",
+			ip:     "2001:db8::1",
+			status: 302,
+		},
+		{
+			name:    "with long referer",
+			ip:      "1.2.3.4",
+			referer: longURL,
+			status:  302,
+		},
+		{
+			name:    "with long unicode referer",
+			ip:      "1.2.3.4",
+			referer: longURLCyrillicHost,
+			status:  302,
+		},
+		{
+			name:      "with long user-agent",
+			ip:        "1.2.3.4",
+			userAgent: longUserAgent,
+			status:    302,
+		},
+		{
+			name:      "with long unicode user-agent",
+			ip:        "1.2.3.4",
+			userAgent: longUserAgentCyrillic,
+			status:    302,
 		},
 	}
 
@@ -374,7 +387,16 @@ func TestCreateVisit(t *testing.T) {
 
 				seedDB(t, tx, "links")
 
-				err = store.CreateVisit(ctx, tc.input)
+				visit, err := links.NewVisit(
+					1,
+					tc.ip,
+					tc.referer,
+					tc.userAgent,
+					tc.status,
+				)
+				require.NoError(t, err)
+
+				err = store.CreateVisit(ctx, visit)
 				require.NoError(t, err)
 
 				rang, err := application.NewRange(0, 1)
@@ -391,11 +413,11 @@ func TestCreateVisit(t *testing.T) {
 
 				got := visits[0]
 
-				require.Equal(t, tc.input.LinkID, got.LinkID)
-				require.Equal(t, tc.input.IP, got.IP)
-				require.Equal(t, tc.input.Referer, got.Referer)
-				require.Equal(t, tc.input.UserAgent, got.UserAgent)
-				require.Equal(t, tc.input.Status, got.Status)
+				require.Equal(t, visit.LinkID, got.LinkID)
+				require.Equal(t, visit.IP, got.IP)
+				require.Equal(t, visit.Referer, got.Referer)
+				require.Equal(t, visit.UserAgent, got.UserAgent)
+				require.Equal(t, visit.Status, got.Status)
 			})
 		})
 	}
@@ -406,7 +428,16 @@ func TestCreateVisit(t *testing.T) {
 		withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
 			store := NewVisitsStore(tx)
 
-			err := store.CreateVisit(ctx, visitWithOptionals)
+			visit, err := links.NewVisit(
+				1,
+				"1.2.3.4",
+				"",
+				"",
+				302,
+			)
+			require.NoError(t, err)
+
+			err = store.CreateVisit(ctx, visit)
 			require.ErrorIs(t, err, application.ErrStoreInternal)
 		})
 	})
