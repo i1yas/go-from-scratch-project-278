@@ -116,21 +116,6 @@ func TestNewVisit(t *testing.T) {
 			status:  302,
 			errs:    []error{ErrInvalidVisit, ErrInvalidIP},
 		},
-		{
-			name:    "invalid referer",
-			ip:      "10.11.12.13",
-			referer: longURL + strings.Repeat("x", 200),
-			status:  302,
-			errs:    []error{ErrInvalidVisit, ErrInvalidReferer},
-		},
-		{
-			name:      "invalid user-agent",
-			ip:        "10.11.12.13",
-			referer:   "http://mysite",
-			userAgent: strings.Repeat("x", userAgentMaxLength+1),
-			status:    302,
-			errs:      []error{ErrInvalidVisit, ErrInvalidUserAgent},
-		},
 	}
 
 	for _, tc := range cases {
@@ -150,4 +135,30 @@ func TestNewVisit(t *testing.T) {
 			require.Equal(t, tc.want, got)
 		})
 	}
+
+	t.Run("long referer truncated", func(t *testing.T) {
+		veryLongURL := "http://example.com/" + strings.Repeat("x", refererMaxLength*2)
+		visit, err := NewVisit(
+			1,
+			"1.2.3.4",
+			veryLongURL,
+			"",
+			302,
+		)
+		require.NoError(t, err)
+		require.Equal(t, veryLongURL[0:refererMaxLength], visit.Referer)
+	})
+
+	t.Run("long user-agent truncated", func(t *testing.T) {
+		longUserAgent := strings.Repeat("x", userAgentMaxLength*2)
+		visit, err := NewVisit(
+			1,
+			"1.2.3.4",
+			"",
+			longUserAgent,
+			302,
+		)
+		require.NoError(t, err)
+		require.Equal(t, longUserAgent[0:userAgentMaxLength], visit.UserAgent)
+	})
 }

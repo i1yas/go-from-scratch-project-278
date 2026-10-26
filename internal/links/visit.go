@@ -15,10 +15,7 @@ var (
 )
 
 const (
-	refererMinLength = 0
-	refererMaxLength = 255
-
-	userAgentMinLength = 0
+	refererMaxLength   = 255
 	userAgentMaxLength = 255
 )
 
@@ -46,21 +43,20 @@ func NewVisit(
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidIP, err)
 	}
 
-	err = validateCharactersCount(referer, refererMinLength, refererMaxLength)
-	if err != nil {
-		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidReferer, err)
-	}
-
-	err = validateCharactersCount(userAgent, userAgentMinLength, userAgentMaxLength)
-	if err != nil {
-		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidUserAgent, err)
-	}
-
 	return Visit{
 		LinkID:    linkID,
 		IP:        parsedIP,
-		Referer:   referer,
-		UserAgent: userAgent,
+		Referer:   truncate(referer, refererMaxLength),
+		UserAgent: truncate(userAgent, userAgentMaxLength),
 		Status:    status,
 	}, nil
+}
+
+func truncate(s string, maxLen int) string {
+	rs := []rune(s)
+	if len(rs) <= maxLen {
+		return s
+	}
+
+	return string(rs[0:maxLen])
 }
