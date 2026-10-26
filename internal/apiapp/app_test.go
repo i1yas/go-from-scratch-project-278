@@ -158,6 +158,8 @@ func TestApp(t *testing.T) {
 		})
 
 		step(t, "resolve link without IP, no visit recorded", func(t *testing.T) {
+			totalVisitsBefore := fetchVisitsTotalCount(t, app)
+
 			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
 			req, err := http.NewRequest("GET", resolveLinkURL, nil)
 			require.NoError(t, err)
@@ -168,11 +170,9 @@ func TestApp(t *testing.T) {
 			require.Equal(t, 302, w.Code)
 			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
 
-			w = makeRequest(t, app, "GET", "/api/link_visits?range[0,10]", nil)
-			require.Equal(t, 200, w.Code)
-
-			visitsResp := bodyAsJSON[[]visitDTO](t, w)
-			require.Equal(t, 1, len(visitsResp))
+			totalVisitsAfter := fetchVisitsTotalCount(t, app)
+			totalVisitsInc := totalVisitsAfter - totalVisitsBefore
+			require.Equal(t, 0, totalVisitsInc)
 		})
 
 		step(t, "delete link", func(t *testing.T) {
