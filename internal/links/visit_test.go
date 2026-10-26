@@ -9,8 +9,8 @@ import (
 )
 
 func TestNewVisit(t *testing.T) {
-	longURL := "http://" + strings.Repeat("x", 1000)
-	longURLWithCyrillicHost := "http://пример.рф" + strings.Repeat("x", 1000)
+	longURL := "http://example.com/" + strings.Repeat("x", 200)
+	longURLWithCyrillicHost := "http://пример.рф/" + strings.Repeat("x", 200)
 
 	cases := []struct {
 		name      string
@@ -64,22 +64,22 @@ func TestNewVisit(t *testing.T) {
 		{
 			name:    "valid visit with max len referer",
 			ip:      "10.11.12.13",
-			referer: longURL[0:refererMaxLength],
+			referer: longURL,
 			status:  302,
 			want: Visit{
 				IP:      netip.AddrFrom4([4]byte{10, 11, 12, 13}),
-				Referer: longURL[0:refererMaxLength],
+				Referer: longURL,
 				Status:  302,
 			},
 		},
 		{
 			name:    "valid visit with max len unicode referer",
 			ip:      "10.11.12.13",
-			referer: longURLWithCyrillicHost[0:refererMaxLength],
+			referer: longURLWithCyrillicHost,
 			status:  302,
 			want: Visit{
 				IP:      netip.AddrFrom4([4]byte{10, 11, 12, 13}),
-				Referer: longURLWithCyrillicHost[0:refererMaxLength],
+				Referer: longURLWithCyrillicHost,
 				Status:  302,
 			},
 		},
@@ -119,7 +119,7 @@ func TestNewVisit(t *testing.T) {
 		{
 			name:    "invalid referer",
 			ip:      "10.11.12.13",
-			referer: longURL[0 : refererMaxLength+1],
+			referer: longURL + strings.Repeat("x", 200),
 			status:  302,
 			errs:    []error{ErrInvalidVisit, ErrInvalidReferer},
 		},
