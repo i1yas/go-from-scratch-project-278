@@ -15,11 +15,11 @@ var (
 )
 
 const (
-	minRefererLength = 0
-	maxRefererLength = 255
+	refererMinLength = 0
+	refererMaxLength = 255
 
-	minUserAgentLength = 0
-	maxUserAgentLength = 255
+	userAgentMinLength = 0
+	userAgentMaxLength = 255
 )
 
 // Visit contains info about link visit
@@ -46,12 +46,12 @@ func NewVisit(
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidIP, err)
 	}
 
-	err = validateCharactersCount(referer, minRefererLength, maxRefererLength)
+	err = validateCharactersCount(referer, refererMinLength, refererMaxLength)
 	if err != nil {
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidReferer, err)
 	}
 
-	err = validateCharactersCount(userAgent, minUserAgentLength, maxUserAgentLength)
+	err = validateCharactersCount(userAgent, userAgentMinLength, userAgentMaxLength)
 	if err != nil {
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidUserAgent, err)
 	}
