@@ -237,11 +237,25 @@ func TestApp(t *testing.T) {
 		})
 
 		step(t, "resolve link", func(t *testing.T) {
-			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+			totalVisitsBefore := fetchVisitsTotalCount(t, app)
 
-			w := makeRequest(t, app, "GET", resolveLinkURL, nil)
+			clientIP := "1.2.3.4"
+
+			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+			req, err := http.NewRequest("GET", resolveLinkURL, nil)
+			require.NoError(t, err)
+
+			req.Header.Set(gin.PlatformCloudflare, clientIP)
+
+			w := httptest.NewRecorder()
+			app.Router.ServeHTTP(w, req)
+
 			require.Equal(t, 302, w.Code)
 			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+			totalVisitsAfter := fetchVisitsTotalCount(t, app)
+			totalVisitsInc := totalVisitsAfter - totalVisitsBefore
+			require.Equal(t, 1, totalVisitsInc)
 		})
 	})
 
