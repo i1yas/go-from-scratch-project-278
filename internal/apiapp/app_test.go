@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -243,6 +244,71 @@ func TestApp(t *testing.T) {
 			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
 		})
 	})
+
+	t.Run("resolve link with long user-agent and referer", func(t *testing.T) {
+		app, err := New(ctx, config.Config{
+			Env: config.EnvProduction,
+			App: config.App{
+				BaseURL: "http://example.com",
+			},
+			Database: config.Database{
+				URL: dbURL,
+			},
+			HTTP: config.HTTP{
+				Addr: ":8080",
+			},
+		}, discardLogger())
+		require.NoError(t, err)
+
+		require.NoError(t, err)
+
+		var createdLink linkDTO
+
+		step(t, "create link", func(t *testing.T) {
+			originalURL := "http://test.com"
+			shortcode := "test"
+
+			w := makeRequest(t, app, "POST", "/api/links", linkDTO{
+				OriginalURL: originalURL,
+				Shortname:   shortcode,
+			})
+			require.Equal(t, 201, w.Code)
+
+			resp := bodyAsJSON[linkDTO](t, w)
+
+			require.Equal(t, originalURL, resp.OriginalURL)
+			require.Equal(t, shortcode, resp.Shortname)
+
+			createdLink = resp
+		})
+
+		step(t, "resolve link", func(t *testing.T) {
+			totalVisitsBefore := fetchVisitsTotalCount(t, app)
+
+			clientIP := "1.2.3.4"
+			clientReferer := "http://example.com/page/" + strings.Repeat("x", 1000)
+			clientUserAgent := "very-long-user-agent-" + strings.Repeat("x", 1000)
+
+			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+			req, err := http.NewRequest("GET", resolveLinkURL, nil)
+			require.NoError(t, err)
+
+			req.Header.Set(gin.PlatformCloudflare, clientIP)
+			req.Header.Set("Referer", clientReferer)
+			req.Header.Set("User-Agent", clientUserAgent)
+
+			w := httptest.NewRecorder()
+			app.Router.ServeHTTP(w, req)
+
+			require.Equal(t, 302, w.Code)
+			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+			totalVisitsAfter := fetchVisitsTotalCount(t, app)
+
+			totalVisitsInc := totalVisitsAfter - totalVisitsBefore
+			require.Equal(t, 1, totalVisitsInc)
+		})
+	})
 }
 
 func TestApp_StartupErrors(t *testing.T) {
@@ -409,4 +475,34 @@ func step(t *testing.T, name string, f func(*testing.T)) {
 
 func discardLogger() *slog.Logger {
 	return slog.New(slog.DiscardHandler)
+}
+
+func parseTotalFromContentRange(t *testing.T, w *httptest.ResponseRecorder) int {
+	t.Helper()
+
+	contentRange := w.Header().Get("Content-Range")
+
+	if len(contentRange) < 3 {
+		t.Fatalf("Content-Range is too short: '%s'", contentRange)
+	}
+
+	for i := len(contentRange) - 2; i >= 0; i-- {
+		if contentRange[i] == '/' {
+			count, err := strconv.ParseInt(contentRange[i+1:], 10, 32)
+			if err != nil {
+				t.Fatalf("failed to parse total count in Content-Range: %v", err)
+			}
+
+			return int(count)
+		}
+	}
+
+	t.Fatal("total count not found in Content-Range")
+	return 0
+}
+
+func fetchVisitsTotalCount(t *testing.T, app *App) int {
+	w := makeRequest(t, app, "GET", "/api/link_visits", nil)
+	require.Equal(t, 200, w.Code)
+	return parseTotalFromContentRange(t, w)
 }
