@@ -9,6 +9,9 @@ import (
 )
 
 func TestNewVisit(t *testing.T) {
+	longURL := "http://" + strings.Repeat("x", 1000)
+	longURLWithCyrillicHost := "http://пример.рф" + strings.Repeat("x", 1000)
+
 	cases := []struct {
 		name      string
 		ip        string
@@ -59,6 +62,54 @@ func TestNewVisit(t *testing.T) {
 			},
 		},
 		{
+			name:    "valid visit with max len referer",
+			ip:      "10.11.12.13",
+			referer: longURL[0:refererMaxLength],
+			status:  302,
+			want: Visit{
+				IP:      netip.AddrFrom4([4]byte{10, 11, 12, 13}),
+				Referer: longURL[0:refererMaxLength],
+				Status:  302,
+			},
+		},
+		{
+			name:    "valid visit with max len unicode referer",
+			ip:      "10.11.12.13",
+			referer: longURLWithCyrillicHost[0:refererMaxLength],
+			status:  302,
+			want: Visit{
+				IP:      netip.AddrFrom4([4]byte{10, 11, 12, 13}),
+				Referer: longURLWithCyrillicHost[0:refererMaxLength],
+				Status:  302,
+			},
+		},
+		{
+			name:      "valid visit with max len user-agent",
+			ip:        "10.11.12.13",
+			referer:   "http://mysite",
+			userAgent: strings.Repeat("x", userAgentMaxLength),
+			status:    302,
+			want: Visit{
+				IP:        netip.AddrFrom4([4]byte{10, 11, 12, 13}),
+				Referer:   "http://mysite",
+				UserAgent: strings.Repeat("x", userAgentMaxLength),
+				Status:    302,
+			},
+		},
+		{
+			name:      "valid visit with max len unicode user-agent",
+			ip:        "10.11.12.13",
+			referer:   "http://mysite",
+			userAgent: strings.Repeat("щ", userAgentMaxLength),
+			status:    302,
+			want: Visit{
+				IP:        netip.AddrFrom4([4]byte{10, 11, 12, 13}),
+				Referer:   "http://mysite",
+				UserAgent: strings.Repeat("щ", userAgentMaxLength),
+				Status:    302,
+			},
+		},
+		{
 			name:    "invalid ip",
 			ip:      "1.1",
 			referer: "http://mysite",
@@ -68,7 +119,7 @@ func TestNewVisit(t *testing.T) {
 		{
 			name:    "invalid referer",
 			ip:      "10.11.12.13",
-			referer: "http://" + strings.Repeat("x", refererMaxLength),
+			referer: longURL[0 : refererMaxLength+1],
 			status:  302,
 			errs:    []error{ErrInvalidVisit, ErrInvalidReferer},
 		},
@@ -76,7 +127,7 @@ func TestNewVisit(t *testing.T) {
 			name:      "invalid user-agent",
 			ip:        "10.11.12.13",
 			referer:   "http://mysite",
-			userAgent: strings.Repeat("x", refererMaxLength+1),
+			userAgent: strings.Repeat("x", userAgentMaxLength+1),
 			status:    302,
 			errs:      []error{ErrInvalidVisit, ErrInvalidUserAgent},
 		},
