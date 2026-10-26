@@ -333,8 +333,8 @@ func TestCreateVisit(t *testing.T) {
 	visitWithoutOptionals, err := links.NewVisit(
 		1,
 		"1.2.3.4",
-		"http://test.com",
-		"user-agent",
+		"",
+		"",
 		302,
 	)
 	require.NoError(t, err)
