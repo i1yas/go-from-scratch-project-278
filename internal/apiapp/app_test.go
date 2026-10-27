@@ -140,25 +140,49 @@ func TestApp_HappyPath(t *testing.T) {
 		req.Header.Set("Referer", clientReferer)
 		req.Header.Set("User-Agent", clientUserAgent)
 
-		w := httptest.NewRecorder()
-		app.Router.ServeHTTP(w, req)
+		step(t, "first visit", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			app.Router.ServeHTTP(w, req)
 
-		require.Equal(t, 302, w.Code)
-		require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+			require.Equal(t, 302, w.Code)
+			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
 
-		w = makeRequest(t, app, "GET", "/api/link_visits?range[0,10]", nil)
-		require.Equal(t, 200, w.Code)
-		require.Equal(t, "visits 0-0/1", w.Header().Get("Content-Range"))
+			w = makeRequest(t, app, "GET", "/api/link_visits?range=[0,0]", nil)
+			require.Equal(t, 200, w.Code)
+			require.Equal(t, "visits 0-0/1", w.Header().Get("Content-Range"))
 
-		visitsResp := bodyAsJSON[[]visitDTO](t, w)
-		require.Equal(t, 1, len(visitsResp))
+			visitsResp := bodyAsJSON[[]visitDTO](t, w)
+			require.Equal(t, 1, len(visitsResp))
 
-		gotVisit := visitsResp[0]
+			gotVisit := visitsResp[0]
 
-		require.Equal(t, createdLink.ID, gotVisit.LinkID)
-		require.Equal(t, clientIP, gotVisit.IP)
-		require.Equal(t, clientReferer, gotVisit.Referer)
-		require.Equal(t, clientUserAgent, gotVisit.UserAgent)
+			require.Equal(t, createdLink.ID, gotVisit.LinkID)
+			require.Equal(t, clientIP, gotVisit.IP)
+			require.Equal(t, clientReferer, gotVisit.Referer)
+			require.Equal(t, clientUserAgent, gotVisit.UserAgent)
+		})
+
+		step(t, "second visit", func(t *testing.T) {
+			w := httptest.NewRecorder()
+			app.Router.ServeHTTP(w, req)
+
+			require.Equal(t, 302, w.Code)
+			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+			w = makeRequest(t, app, "GET", "/api/link_visits?range=[1,1]", nil)
+			require.Equal(t, 200, w.Code)
+			require.Equal(t, "visits 1-1/2", w.Header().Get("Content-Range"))
+
+			visitsResp := bodyAsJSON[[]visitDTO](t, w)
+			require.Equal(t, 1, len(visitsResp))
+
+			gotVisit := visitsResp[0]
+
+			require.Equal(t, createdLink.ID, gotVisit.LinkID)
+			require.Equal(t, clientIP, gotVisit.IP)
+			require.Equal(t, clientReferer, gotVisit.Referer)
+			require.Equal(t, clientUserAgent, gotVisit.UserAgent)
+		})
 	})
 
 	step(t, "resolve link without IP, no visit recorded", func(t *testing.T) {
