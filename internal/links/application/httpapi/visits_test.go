@@ -175,4 +175,29 @@ func TestGetVisits(t *testing.T) {
 			visitsSvc.AssertExpectations(t)
 		})
 	}
+
+	t.Run("range in header", func(t *testing.T) {
+		visitsSvc := new(fakeVisitsService)
+		router := setupTestRouter(t, &fakeLinkService{}, visitsSvc)
+
+		visitsSvc.
+			On("GetVisits", mock.Anything, application.GetVisitsParams{
+				Range: testutils.Range(t, 2, 3),
+				Sort:  testutils.SortOrder(t, "id", "ASC"),
+			}).
+			Return(application.VisitsResult{
+				Total: 0,
+			}, nil)
+
+		w := httptest.NewRecorder()
+		req, err := http.NewRequest("GET", "/api/link_visits", nil)
+		require.NoError(t, err)
+
+		req.Header.Set("Range", "[2,3]")
+
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, 200, w.Code)
+		require.Equal(t, "visits */0", w.Header().Get("Content-Range"))
+	})
 }

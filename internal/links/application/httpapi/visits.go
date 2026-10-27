@@ -28,7 +28,7 @@ func NewVisitsHandler(service visitsService, logger *slog.Logger) *VisitsHandler
 func (h *VisitsHandler) GetVisits(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	rang, err := parseRange(c.Query("range"), maxGetVisitsPageSize, application.Range{From: 0, To: 4})
+	rang, err := parseRangeFromReq(c, maxGetVisitsPageSize, application.Range{From: 0, To: 4})
 	if err != nil {
 		h.handleError(c, err)
 		return

@@ -5,7 +5,18 @@ import (
 	"fmt"
 
 	"hexleturlshort/internal/links/application"
+
+	"github.com/gin-gonic/gin"
 )
+
+func parseRangeFromReq(c *gin.Context, maxSize int32, defaultRange application.Range) (application.Range, error) {
+	rawRange := c.Query("range")
+	if rawRange == "" {
+		rawRange = c.GetHeader("Range")
+	}
+
+	return parseRange(rawRange, maxSize, defaultRange)
+}
 
 func parseRange(raw string, maxSize int32, defaultRange application.Range) (application.Range, error) {
 	if raw == "" {

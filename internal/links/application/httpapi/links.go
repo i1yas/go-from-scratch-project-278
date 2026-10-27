@@ -34,7 +34,7 @@ func NewLinksHandler(
 func (h *LinksHandler) GetLinks(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	linksRange, err := parseRange(c.Query("range"), maxGetLinksPageSize, application.Range{
+	linksRange, err := parseRangeFromReq(c, maxGetLinksPageSize, application.Range{
 		From: 0,
 		To:   4,
 	})
