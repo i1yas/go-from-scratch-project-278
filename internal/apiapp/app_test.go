@@ -127,7 +127,9 @@ func TestApp_HappyPath(t *testing.T) {
 
 	step(t, "resolve link", func(t *testing.T) {
 		clientIP := "1.2.3.4"
+		//nolint:lll
 		clientReferer := "http://example.com/page/page/page?param1=29a6e0c3-d99d-47e7-b85d-57182cc2d4fe&param2=5f591642-c757-45a1-99a6-31bda9d02a77"
+		//nolint:lll
 		clientUserAgent := "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15"
 
 		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
