@@ -25,381 +25,388 @@ import (
 	"hexleturlshort/internal/database/testutils"
 )
 
-func TestApp(t *testing.T) {
+func TestApp_HappyPath(t *testing.T) {
 	dbURL := setupTestDB(t)
+
+	ctx := t.Context()
+
+	app, err := New(ctx, config.Config{
+		Env: config.EnvProduction,
+		App: config.App{
+			BaseURL: "http://example.com",
+		},
+		Database: config.Database{
+			URL: dbURL,
+		},
+		HTTP: config.HTTP{
+			Addr: ":8080",
+		},
+	}, discardLogger())
+	require.NoError(t, err)
 
 	gin.SetMode(gin.TestMode)
 
-	t.Run("happy path", func(t *testing.T) {
-		ctx := t.Context()
+	step(t, "ping returns pong", func(t *testing.T) {
+		w := makeRequest(t, app, "GET", "/ping", nil)
+		require.Equal(t, 200, w.Code)
 
-		app, err := New(ctx, config.Config{
-			Env: config.EnvProduction,
-			App: config.App{
-				BaseURL: "http://example.com",
-			},
-			Database: config.Database{
-				URL: dbURL,
-			},
-			HTTP: config.HTTP{
-				Addr: ":8080",
-			},
-		}, discardLogger())
-		require.NoError(t, err)
-
-		step(t, "ping returns pong", func(t *testing.T) {
-			w := makeRequest(t, app, "GET", "/ping", nil)
-			require.Equal(t, 200, w.Code)
-
-			require.Equal(t, "pong", w.Body.String())
-		})
-
-		var createdLink linkDTO
-
-		step(t, "create and get link", func(t *testing.T) {
-			url := "http://test.com"
-			code := "test"
-
-			w := makeRequest(t, app, "POST", "/api/links", linkDTO{
-				OriginalURL: url,
-				Shortname:   code,
-			})
-
-			require.Equal(t, 201, w.Code)
-
-			resp := bodyAsJSON[linkDTO](t, w)
-			require.Equal(t, url, resp.OriginalURL)
-			require.Equal(t, code, resp.Shortname)
-
-			createdLink = resp
-
-			w = makeRequest(t, app, "POST", "/api/links", linkDTO{
-				OriginalURL: url,
-				Shortname:   code,
-			})
-
-			require.Equal(t, 409, w.Code)
-
-			w = makeRequest(t, app, "GET", linkURL(resp.ID), nil)
-
-			require.Equal(t, 200, w.Code)
-
-			getByIDResp := bodyAsJSON[linkDTO](t, w)
-			require.Equal(t, url, getByIDResp.OriginalURL)
-			require.Equal(t, code, getByIDResp.Shortname)
-		})
-
-		step(t, "get links", func(t *testing.T) {
-			w := makeRequest(t, app, "GET", "/api/links", nil)
-
-			require.Equal(t, 200, w.Code)
-			require.Equal(t, "links 0-0/1", w.Header().Get("Content-Range"))
-
-			getLinksResp := bodyAsJSON[[]linkDTO](t, w)
-			require.Equal(t, 1, len(getLinksResp))
-			require.Equal(t, createdLink, getLinksResp[0])
-		})
-
-		step(t, "update link", func(t *testing.T) {
-			url := "http://test.com/added-page"
-			code := "test-1"
-
-			w := makeRequest(t, app, "PUT", linkURL(createdLink.ID), linkDTO{
-				OriginalURL: url,
-				Shortname:   code,
-			})
-
-			require.Equal(t, 200, w.Code)
-
-			resp := bodyAsJSON[linkDTO](t, w)
-			require.Equal(t, url, resp.OriginalURL)
-			require.Equal(t, code, resp.Shortname)
-
-			createdLink = resp
-
-			w = makeRequest(t, app, "GET", linkURL(resp.ID), nil)
-
-			require.Equal(t, 200, w.Code)
-
-			getByIDResp := bodyAsJSON[linkDTO](t, w)
-			require.Equal(t, url, getByIDResp.OriginalURL)
-			require.Equal(t, code, getByIDResp.Shortname)
-		})
-
-		step(t, "resolve link", func(t *testing.T) {
-			clientIP := "1.2.3.4"
-			clientReferer := "http://example.com/page/page/page?param1=29a6e0c3-d99d-47e7-b85d-57182cc2d4fe&param2=5f591642-c757-45a1-99a6-31bda9d02a77"
-			clientUserAgent := "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15"
-
-			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
-			req, err := http.NewRequest("GET", resolveLinkURL, nil)
-			require.NoError(t, err)
-
-			req.Header.Set(gin.PlatformCloudflare, clientIP)
-			req.Header.Set("Referer", clientReferer)
-			req.Header.Set("User-Agent", clientUserAgent)
-
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
-
-			require.Equal(t, 302, w.Code)
-			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
-
-			w = makeRequest(t, app, "GET", "/api/link_visits?range[0,10]", nil)
-			require.Equal(t, 200, w.Code)
-			require.Equal(t, "visits 0-0/1", w.Header().Get("Content-Range"))
-
-			visitsResp := bodyAsJSON[[]visitDTO](t, w)
-			require.Equal(t, 1, len(visitsResp))
-
-			gotVisit := visitsResp[0]
-
-			require.Equal(t, createdLink.ID, gotVisit.LinkID)
-			require.Equal(t, clientIP, gotVisit.IP)
-			require.Equal(t, clientReferer, gotVisit.Referer)
-			require.Equal(t, clientUserAgent, gotVisit.UserAgent)
-		})
-
-		step(t, "resolve link without IP, no visit recorded", func(t *testing.T) {
-			totalVisitsBefore := fetchVisitsTotalCount(t, app)
-
-			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
-			req, err := http.NewRequest("GET", resolveLinkURL, nil)
-			require.NoError(t, err)
-
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
-
-			require.Equal(t, 302, w.Code)
-			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
-
-			totalVisitsAfter := fetchVisitsTotalCount(t, app)
-			totalVisitsInc := totalVisitsAfter - totalVisitsBefore
-			require.Equal(t, 0, totalVisitsInc)
-		})
-
-		step(t, "delete link", func(t *testing.T) {
-			w := makeRequest(t, app, "DELETE", linkURL(createdLink.ID), nil)
-			require.Equal(t, 204, w.Code)
-
-			w = makeRequest(t, app, "GET", linkURL(createdLink.ID), nil)
-			require.Equal(t, 404, w.Code)
-
-			w = makeRequest(t, app, "GET", "/api/link_visits", nil)
-			require.Equal(t, 200, w.Code)
-
-			visitsResp := bodyAsJSON[[]visitDTO](t, w)
-			require.Equal(t, 0, len(visitsResp))
-		})
+		require.Equal(t, "pong", w.Body.String())
 	})
 
-	t.Run("long base url and shortcode", func(t *testing.T) {
-		ctx := t.Context()
+	var createdLink linkDTO
 
-		app, err := New(ctx, config.Config{
-			Env: config.EnvProduction,
-			App: config.App{
-				BaseURL: "http://" + strings.Repeat("x", 180),
-			},
-			Database: config.Database{
-				URL: dbURL,
-			},
-			HTTP: config.HTTP{
-				Addr: ":8080",
-			},
-		}, discardLogger())
+	step(t, "create and get link", func(t *testing.T) {
+		url := "http://test.com"
+		code := "test"
 
-		require.NoError(t, err)
-
-		var createdLink linkDTO
-
-		step(t, "create link", func(t *testing.T) {
-			originalURL := "http://test.com"
-			shortcode := strings.Repeat("щ", 32)
-
-			w := makeRequest(t, app, "POST", "/api/links", linkDTO{
-				OriginalURL: originalURL,
-				Shortname:   shortcode,
-			})
-			require.Equal(t, 201, w.Code)
-
-			resp := bodyAsJSON[linkDTO](t, w)
-
-			require.Equal(t, originalURL, resp.OriginalURL)
-			require.Equal(t, shortcode, resp.Shortname)
-
-			createdLink = resp
+		w := makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
 		})
 
-		step(t, "read link", func(t *testing.T) {
-			w := makeRequest(t, app, "GET", linkURL(createdLink.ID), nil)
-			require.Equal(t, 200, w.Code)
+		require.Equal(t, 201, w.Code)
 
-			resp := bodyAsJSON[linkDTO](t, w)
+		resp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, resp.OriginalURL)
+		require.Equal(t, code, resp.Shortname)
 
-			require.Equal(t, createdLink.Shortname, resp.Shortname)
-			require.Equal(t, createdLink.OriginalURL, resp.OriginalURL)
+		createdLink = resp
+
+		w = makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
 		})
 
-		step(t, "resolve link", func(t *testing.T) {
-			totalVisitsBefore := fetchVisitsTotalCount(t, app)
+		require.Equal(t, 409, w.Code)
 
-			clientIP := "1.2.3.4"
+		w = makeRequest(t, app, "GET", linkURL(resp.ID), nil)
 
-			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
-			req, err := http.NewRequest("GET", resolveLinkURL, nil)
-			require.NoError(t, err)
+		require.Equal(t, 200, w.Code)
 
-			req.Header.Set(gin.PlatformCloudflare, clientIP)
-
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
-
-			require.Equal(t, 302, w.Code)
-			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
-
-			totalVisitsAfter := fetchVisitsTotalCount(t, app)
-			totalVisitsInc := totalVisitsAfter - totalVisitsBefore
-			require.Equal(t, 1, totalVisitsInc)
-		})
+		getByIDResp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, getByIDResp.OriginalURL)
+		require.Equal(t, code, getByIDResp.Shortname)
 	})
 
-	t.Run("resolve link with long user-agent and referer", func(t *testing.T) {
-		ctx := t.Context()
+	step(t, "get links", func(t *testing.T) {
+		w := makeRequest(t, app, "GET", "/api/links", nil)
 
-		app, err := New(ctx, config.Config{
-			Env: config.EnvProduction,
-			App: config.App{
-				BaseURL: "http://example.com",
-			},
-			Database: config.Database{
-				URL: dbURL,
-			},
-			HTTP: config.HTTP{
-				Addr: ":8080",
-			},
-		}, discardLogger())
-		require.NoError(t, err)
+		require.Equal(t, 200, w.Code)
+		require.Equal(t, "links 0-0/1", w.Header().Get("Content-Range"))
 
-		require.NoError(t, err)
-
-		var createdLink linkDTO
-
-		step(t, "create link", func(t *testing.T) {
-			originalURL := "http://test.com"
-			shortcode := "test"
-
-			w := makeRequest(t, app, "POST", "/api/links", linkDTO{
-				OriginalURL: originalURL,
-				Shortname:   shortcode,
-			})
-			require.Equal(t, 201, w.Code)
-
-			resp := bodyAsJSON[linkDTO](t, w)
-
-			require.Equal(t, originalURL, resp.OriginalURL)
-			require.Equal(t, shortcode, resp.Shortname)
-
-			createdLink = resp
-		})
-
-		step(t, "resolve link", func(t *testing.T) {
-			totalVisitsBefore := fetchVisitsTotalCount(t, app)
-
-			clientIP := "1.2.3.4"
-			clientReferer := "http://example.com/page/" + strings.Repeat("x", 1000)
-			clientUserAgent := "very-long-user-agent-" + strings.Repeat("x", 1000)
-
-			resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
-			req, err := http.NewRequest("GET", resolveLinkURL, nil)
-			require.NoError(t, err)
-
-			req.Header.Set(gin.PlatformCloudflare, clientIP)
-			req.Header.Set("Referer", clientReferer)
-			req.Header.Set("User-Agent", clientUserAgent)
-
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
-
-			require.Equal(t, 302, w.Code)
-			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
-
-			totalVisitsAfter := fetchVisitsTotalCount(t, app)
-
-			totalVisitsInc := totalVisitsAfter - totalVisitsBefore
-			require.Equal(t, 1, totalVisitsInc)
-		})
+		getLinksResp := bodyAsJSON[[]linkDTO](t, w)
+		require.Equal(t, 1, len(getLinksResp))
+		require.Equal(t, createdLink, getLinksResp[0])
 	})
 
-	t.Run("run and stop", func(t *testing.T) {
-		ctx := t.Context()
+	step(t, "update link", func(t *testing.T) {
+		url := "http://test.com/added-page"
+		code := "test-1"
 
-		var wg sync.WaitGroup
+		w := makeRequest(t, app, "PUT", linkURL(createdLink.ID), linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
+		})
 
-		addr := pickFreeAddr(t)
+		require.Equal(t, 200, w.Code)
 
-		app, err := New(ctx, config.Config{
-			Env: config.EnvProduction,
-			App: config.App{
-				BaseURL: "http://example.com",
-			},
-			Database: config.Database{
-				URL: dbURL,
-			},
-			HTTP: config.HTTP{
-				Addr: addr,
-			},
-		}, discardLogger())
+		resp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, resp.OriginalURL)
+		require.Equal(t, code, resp.Shortname)
+
+		createdLink = resp
+
+		w = makeRequest(t, app, "GET", linkURL(resp.ID), nil)
+
+		require.Equal(t, 200, w.Code)
+
+		getByIDResp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, getByIDResp.OriginalURL)
+		require.Equal(t, code, getByIDResp.Shortname)
+	})
+
+	step(t, "resolve link", func(t *testing.T) {
+		clientIP := "1.2.3.4"
+		clientReferer := "http://example.com/page/page/page?param1=29a6e0c3-d99d-47e7-b85d-57182cc2d4fe&param2=5f591642-c757-45a1-99a6-31bda9d02a77"
+		clientUserAgent := "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15"
+
+		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+		req, err := http.NewRequest("GET", resolveLinkURL, nil)
 		require.NoError(t, err)
 
-		reqStarted := make(chan struct{})
-		releaseReq := make(chan struct{})
-		appErr := make(chan error)
+		req.Header.Set(gin.PlatformCloudflare, clientIP)
+		req.Header.Set("Referer", clientReferer)
+		req.Header.Set("User-Agent", clientUserAgent)
 
-		app.Router.GET("/test/wait", func(c *gin.Context) {
-			close(reqStarted)
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
 
-			<-releaseReq
-			c.String(200, "done")
-		})
+		require.Equal(t, 302, w.Code)
+		require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
 
-		runCtx, stopApp := context.WithCancel(ctx)
+		w = makeRequest(t, app, "GET", "/api/link_visits?range[0,10]", nil)
+		require.Equal(t, 200, w.Code)
+		require.Equal(t, "visits 0-0/1", w.Header().Get("Content-Range"))
 
-		wg.Go(func() {
-			appErr <- app.Run(runCtx)
-		})
+		visitsResp := bodyAsJSON[[]visitDTO](t, w)
+		require.Equal(t, 1, len(visitsResp))
 
-		waitForServer(t, addr)
+		gotVisit := visitsResp[0]
 
-		wg.Go(func() {
-			resp, err := http.Get("http://" + addr + "/test/wait")
-			require.NoError(t, err)
-
-			defer func() {
-				require.NoError(t, resp.Body.Close())
-			}()
-
-			require.Equal(t, 200, resp.StatusCode)
-
-			data, err := io.ReadAll(resp.Body)
-			require.NoError(t, err)
-
-			require.Equal(t, "done", string(data))
-		})
-
-		<-reqStarted
-		stopApp()
-
-		wg.Go(func() {
-			// NOTE: let server start shutdown process
-			time.Sleep(time.Millisecond * 100)
-			close(releaseReq)
-		})
-
-		require.NoError(t, <-appErr)
-
-		wg.Wait()
+		require.Equal(t, createdLink.ID, gotVisit.LinkID)
+		require.Equal(t, clientIP, gotVisit.IP)
+		require.Equal(t, clientReferer, gotVisit.Referer)
+		require.Equal(t, clientUserAgent, gotVisit.UserAgent)
 	})
+
+	step(t, "resolve link without IP, no visit recorded", func(t *testing.T) {
+		totalVisitsBefore := fetchVisitsTotalCount(t, app)
+
+		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+		req, err := http.NewRequest("GET", resolveLinkURL, nil)
+		require.NoError(t, err)
+
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
+
+		require.Equal(t, 302, w.Code)
+		require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+		totalVisitsAfter := fetchVisitsTotalCount(t, app)
+		totalVisitsInc := totalVisitsAfter - totalVisitsBefore
+		require.Equal(t, 0, totalVisitsInc)
+	})
+
+	step(t, "delete link", func(t *testing.T) {
+		w := makeRequest(t, app, "DELETE", linkURL(createdLink.ID), nil)
+		require.Equal(t, 204, w.Code)
+
+		w = makeRequest(t, app, "GET", linkURL(createdLink.ID), nil)
+		require.Equal(t, 404, w.Code)
+
+		w = makeRequest(t, app, "GET", "/api/link_visits", nil)
+		require.Equal(t, 200, w.Code)
+
+		visitsResp := bodyAsJSON[[]visitDTO](t, w)
+		require.Equal(t, 0, len(visitsResp))
+	})
+}
+
+func TestApp_LongBaseURLAndShortcode(t *testing.T) {
+	dbURL := setupTestDB(t)
+
+	ctx := t.Context()
+
+	app, err := New(ctx, config.Config{
+		Env: config.EnvProduction,
+		App: config.App{
+			BaseURL: "http://" + strings.Repeat("x", 180),
+		},
+		Database: config.Database{
+			URL: dbURL,
+		},
+		HTTP: config.HTTP{
+			Addr: ":8080",
+		},
+	}, discardLogger())
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+
+	var createdLink linkDTO
+
+	step(t, "create link", func(t *testing.T) {
+		originalURL := "http://test.com"
+		shortcode := strings.Repeat("щ", 32)
+
+		w := makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: originalURL,
+			Shortname:   shortcode,
+		})
+		require.Equal(t, 201, w.Code)
+
+		resp := bodyAsJSON[linkDTO](t, w)
+
+		require.Equal(t, originalURL, resp.OriginalURL)
+		require.Equal(t, shortcode, resp.Shortname)
+
+		createdLink = resp
+	})
+
+	step(t, "read link", func(t *testing.T) {
+		w := makeRequest(t, app, "GET", linkURL(createdLink.ID), nil)
+		require.Equal(t, 200, w.Code)
+
+		resp := bodyAsJSON[linkDTO](t, w)
+
+		require.Equal(t, createdLink.Shortname, resp.Shortname)
+		require.Equal(t, createdLink.OriginalURL, resp.OriginalURL)
+	})
+
+	step(t, "resolve link", func(t *testing.T) {
+		totalVisitsBefore := fetchVisitsTotalCount(t, app)
+
+		clientIP := "1.2.3.4"
+
+		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+		req, err := http.NewRequest("GET", resolveLinkURL, nil)
+		require.NoError(t, err)
+
+		req.Header.Set(gin.PlatformCloudflare, clientIP)
+
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
+
+		require.Equal(t, 302, w.Code)
+		require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+		totalVisitsAfter := fetchVisitsTotalCount(t, app)
+		totalVisitsInc := totalVisitsAfter - totalVisitsBefore
+		require.Equal(t, 1, totalVisitsInc)
+	})
+}
+
+func TestApp_ResolveLinkWithLongHeaders(t *testing.T) {
+	dbURL := setupTestDB(t)
+
+	ctx := t.Context()
+
+	app, err := New(ctx, config.Config{
+		Env: config.EnvProduction,
+		App: config.App{
+			BaseURL: "http://example.com",
+		},
+		Database: config.Database{
+			URL: dbURL,
+		},
+		HTTP: config.HTTP{
+			Addr: ":8080",
+		},
+	}, discardLogger())
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+
+	var createdLink linkDTO
+
+	step(t, "create link", func(t *testing.T) {
+		originalURL := "http://test.com"
+		shortcode := "test"
+
+		w := makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: originalURL,
+			Shortname:   shortcode,
+		})
+		require.Equal(t, 201, w.Code)
+
+		resp := bodyAsJSON[linkDTO](t, w)
+
+		require.Equal(t, originalURL, resp.OriginalURL)
+		require.Equal(t, shortcode, resp.Shortname)
+
+		createdLink = resp
+	})
+
+	step(t, "resolve link", func(t *testing.T) {
+		totalVisitsBefore := fetchVisitsTotalCount(t, app)
+
+		clientIP := "1.2.3.4"
+		clientReferer := "http://example.com/page/" + strings.Repeat("x", 1000)
+		clientUserAgent := "very-long-user-agent-" + strings.Repeat("x", 1000)
+
+		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+		req, err := http.NewRequest("GET", resolveLinkURL, nil)
+		require.NoError(t, err)
+
+		req.Header.Set(gin.PlatformCloudflare, clientIP)
+		req.Header.Set("Referer", clientReferer)
+		req.Header.Set("User-Agent", clientUserAgent)
+
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
+
+		require.Equal(t, 302, w.Code)
+		require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+
+		totalVisitsAfter := fetchVisitsTotalCount(t, app)
+
+		totalVisitsInc := totalVisitsAfter - totalVisitsBefore
+		require.Equal(t, 1, totalVisitsInc)
+	})
+}
+
+func TestApp_RunAndStop(t *testing.T) {
+	dbURL := setupTestDB(t)
+
+	ctx := t.Context()
+
+	var wg sync.WaitGroup
+
+	addr := pickFreeAddr(t)
+
+	app, err := New(ctx, config.Config{
+		Env: config.EnvProduction,
+		App: config.App{
+			BaseURL: "http://example.com",
+		},
+		Database: config.Database{
+			URL: dbURL,
+		},
+		HTTP: config.HTTP{
+			Addr: addr,
+		},
+	}, discardLogger())
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+
+	reqStarted := make(chan struct{})
+	releaseReq := make(chan struct{})
+	appErr := make(chan error)
+
+	app.Router.GET("/test/wait", func(c *gin.Context) {
+		close(reqStarted)
+
+		<-releaseReq
+		c.String(200, "done")
+	})
+
+	runCtx, stopApp := context.WithCancel(ctx)
+
+	wg.Go(func() {
+		appErr <- app.Run(runCtx)
+	})
+
+	waitForServer(t, addr)
+
+	wg.Go(func() {
+		resp, err := http.Get("http://" + addr + "/test/wait")
+		require.NoError(t, err)
+
+		defer func() {
+			require.NoError(t, resp.Body.Close())
+		}()
+
+		require.Equal(t, 200, resp.StatusCode)
+
+		data, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		require.Equal(t, "done", string(data))
+	})
+
+	<-reqStarted
+	stopApp()
+
+	wg.Go(func() {
+		// NOTE: let server start shutdown process
+		time.Sleep(time.Millisecond * 100)
+		close(releaseReq)
+	})
+
+	require.NoError(t, <-appErr)
+
+	wg.Wait()
 }
 
 func TestApp_StartupErrors(t *testing.T) {
@@ -490,8 +497,14 @@ func linkURL(id int64) string {
 	return fmt.Sprintf("/api/links/%d", id)
 }
 
+var testDBURL string
+
 func setupTestDB(t *testing.T) string {
 	t.Helper()
+
+	if testDBURL != "" {
+		return testDBURL
+	}
 
 	ctx := t.Context()
 
