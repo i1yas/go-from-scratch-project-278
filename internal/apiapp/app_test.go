@@ -218,6 +218,74 @@ func TestApp_HappyPath(t *testing.T) {
 	})
 }
 
+func TestApp_RequestBigBody(t *testing.T) {
+	dbURL := setupTestDB(t)
+
+	ctx := t.Context()
+
+	app, err := New(ctx, config.Config{
+		Env: config.EnvProduction,
+		App: config.App{
+			BaseURL: "http://example.com",
+		},
+		Database: config.Database{
+			URL: dbURL,
+		},
+		HTTP: config.HTTP{
+			Addr: ":8080",
+		},
+	}, discardLogger())
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+
+	var createdLink linkDTO
+
+	step(t, "create link", func(t *testing.T) {
+		urlBase := "http://x?"
+		symbolRepeats := 200 - len(urlBase)
+		// NOTE: json encode symbol &
+		url := urlBase + strings.Repeat("\u0026", symbolRepeats)
+
+		// NOTE: 𝒜 - math script symbol, takes 4 bytes
+		code := strings.Repeat("𝒜", 32)
+
+		w := makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
+		})
+
+		require.Equal(t, 201, w.Code)
+
+		resp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, resp.OriginalURL)
+		require.Equal(t, code, resp.Shortname)
+
+		createdLink = resp
+	})
+
+	step(t, "update link", func(t *testing.T) {
+		urlBase := "http://y?"
+		symbolRepeats := 200 - len(urlBase)
+		url := urlBase + strings.Repeat("\u0026", symbolRepeats)
+
+		code := strings.Repeat("𝔅", 32)
+
+		require.GreaterOrEqual(t, len(code), 32)
+
+		w := makeRequest(t, app, "PUT", linkURL(createdLink.ID), linkDTO{
+			OriginalURL: url,
+			Shortname:   code,
+		})
+
+		require.Equal(t, 200, w.Code)
+
+		resp := bodyAsJSON[linkDTO](t, w)
+		require.Equal(t, url, resp.OriginalURL)
+		require.Equal(t, code, resp.Shortname)
+	})
+}
+
 func TestApp_LongBaseURLAndShortcode(t *testing.T) {
 	dbURL := setupTestDB(t)
 
