@@ -138,17 +138,19 @@ func (app *App) stop(ctx context.Context) error {
 
 	app.Logger.Info("shutting down server")
 
+	var errs []error
+
 	err := app.Server.Shutdown(shutdownCtx)
 	if err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	app.Logger.Info("closing postgres")
 
 	err = app.DB.Close()
 	if err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
