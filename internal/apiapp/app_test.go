@@ -7,13 +7,16 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -25,11 +28,11 @@ import (
 func TestApp(t *testing.T) {
 	dbURL := setupTestDB(t)
 
-	ctx := t.Context()
-
 	gin.SetMode(gin.TestMode)
 
 	t.Run("happy path", func(t *testing.T) {
+		ctx := t.Context()
+
 		app, err := New(ctx, config.Config{
 			Env: config.EnvProduction,
 			App: config.App{
@@ -191,6 +194,8 @@ func TestApp(t *testing.T) {
 	})
 
 	t.Run("long base url and shortcode", func(t *testing.T) {
+		ctx := t.Context()
+
 		app, err := New(ctx, config.Config{
 			Env: config.EnvProduction,
 			App: config.App{
@@ -260,6 +265,8 @@ func TestApp(t *testing.T) {
 	})
 
 	t.Run("resolve link with long user-agent and referer", func(t *testing.T) {
+		ctx := t.Context()
+
 		app, err := New(ctx, config.Config{
 			Env: config.EnvProduction,
 			App: config.App{
@@ -322,6 +329,76 @@ func TestApp(t *testing.T) {
 			totalVisitsInc := totalVisitsAfter - totalVisitsBefore
 			require.Equal(t, 1, totalVisitsInc)
 		})
+	})
+
+	t.Run("run and stop", func(t *testing.T) {
+		ctx := t.Context()
+
+		var wg sync.WaitGroup
+
+		addr := pickFreeAddr(t)
+
+		app, err := New(ctx, config.Config{
+			Env: config.EnvProduction,
+			App: config.App{
+				BaseURL: "http://example.com",
+			},
+			Database: config.Database{
+				URL: dbURL,
+			},
+			HTTP: config.HTTP{
+				Addr: addr,
+			},
+		}, discardLogger())
+		require.NoError(t, err)
+
+		reqStarted := make(chan struct{})
+		releaseReq := make(chan struct{})
+		appErr := make(chan error)
+
+		app.Router.GET("/test/wait", func(c *gin.Context) {
+			close(reqStarted)
+
+			<-releaseReq
+			c.String(200, "done")
+		})
+
+		runCtx, stopApp := context.WithCancel(ctx)
+
+		wg.Go(func() {
+			appErr <- app.Run(runCtx)
+		})
+
+		waitForServer(t, addr)
+
+		wg.Go(func() {
+			resp, err := http.Get("http://" + addr + "/test/wait")
+			require.NoError(t, err)
+
+			defer func() {
+				require.NoError(t, resp.Body.Close())
+			}()
+
+			require.Equal(t, 200, resp.StatusCode)
+
+			data, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			require.Equal(t, "done", string(data))
+		})
+
+		<-reqStarted
+		stopApp()
+
+		wg.Go(func() {
+			// NOTE: let server start shutdown process
+			time.Sleep(time.Millisecond * 100)
+			close(releaseReq)
+		})
+
+		require.NoError(t, <-appErr)
+
+		wg.Wait()
 	})
 }
 
@@ -388,6 +465,11 @@ func TestApp_StartupErrors(t *testing.T) {
 		}, discardLogger())
 		require.ErrorIs(t, err, ErrFailedToInitSentry)
 	})
+}
+
+func TestMain(m *testing.M) {
+	gin.SetMode(gin.TestMode)
+	m.Run()
 }
 
 type linkDTO struct {
@@ -512,11 +594,41 @@ func parseTotalFromContentRange(t *testing.T, w *httptest.ResponseRecorder) int 
 	}
 
 	t.Fatal("total count not found in Content-Range")
+
 	return 0
 }
 
 func fetchVisitsTotalCount(t *testing.T, app *App) int {
 	w := makeRequest(t, app, "GET", "/api/link_visits", nil)
 	require.Equal(t, 200, w.Code)
+
 	return parseTotalFromContentRange(t, w)
+}
+
+func waitForServer(t *testing.T, addr string) {
+	t.Helper()
+
+	require.Eventually(t, func() bool {
+		conn, err := net.DialTimeout("tcp", addr, 50*time.Millisecond)
+		if err != nil {
+			return false
+		}
+
+		require.NoError(t, conn.Close())
+
+		return true
+	}, 2*time.Second, 10*time.Millisecond)
+}
+
+func pickFreeAddr(t *testing.T) string {
+	t.Helper()
+
+	conn, err := net.Listen("tcp", "127.0.0.1:")
+	require.NoError(t, err)
+
+	addr := conn.Addr().String()
+
+	require.NoError(t, conn.Close())
+
+	return addr
 }
