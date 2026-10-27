@@ -103,7 +103,7 @@ func (app *App) Run(ctx context.Context) error {
 
 		app.Logger.Info("shutting down apiapp")
 
-		app.Stop(ctx)
+		app.Stop(context.Background())
 	}()
 
 	app.Logger.Info("starting server",
