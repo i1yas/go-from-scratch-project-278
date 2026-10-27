@@ -26,6 +26,7 @@ var (
 	ErrFailedToReadConfigFromEnv = errors.New("failed to read config from environment")
 	ErrFailedToCreateShortURLGen = errors.New("failed to create short url generator")
 	ErrFailedToStartServer       = errors.New("failed to start server")
+	ErrFailedToStopApp           = errors.New("failed to stop application")
 	ErrFailedToInitSentry        = errors.New("failed to init sentry client")
 )
 
@@ -98,12 +99,16 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 
 // Run runs application
 func (app *App) Run(ctx context.Context) error {
+	stopErr := make(chan error)
+
 	go func() {
+		defer close(stopErr)
+
 		<-ctx.Done()
 
 		app.Logger.Info("shutting down apiapp")
 
-		app.Stop(context.Background())
+		stopErr <- app.Stop(context.Background())
 	}()
 
 	app.Logger.Info("starting server",
@@ -115,11 +120,16 @@ func (app *App) Run(ctx context.Context) error {
 		return fmt.Errorf("%w: %w", ErrFailedToStartServer, err)
 	}
 
+	err = <-stopErr
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrFailedToStopApp, err)
+	}
+
 	return nil
 }
 
 // Stop stops application
-func (app *App) Stop(ctx context.Context) {
+func (app *App) Stop(ctx context.Context) error {
 	shutdownCtx, cancel := context.WithTimeout(
 		ctx,
 		time.Second*10,
@@ -130,17 +140,15 @@ func (app *App) Stop(ctx context.Context) {
 
 	err := app.Server.Shutdown(shutdownCtx)
 	if err != nil {
-		app.Logger.Error("failed to shutdown server",
-			slog.String("error", err.Error()),
-		)
+		return err
 	}
 
 	app.Logger.Info("closing postgres")
 
 	err = app.DB.Close()
 	if err != nil {
-		app.Logger.Error("failed to shutdown postgres",
-			slog.String("error", err.Error()),
-		)
+		return err
 	}
+
+	return nil
 }
