@@ -149,7 +149,7 @@ func TestApp_HappyPath(t *testing.T) {
 
 			w = makeRequest(t, app, "GET", "/api/link_visits?range=[0,0]", nil)
 			require.Equal(t, 200, w.Code)
-			require.Equal(t, "visits 0-0/1", w.Header().Get("Content-Range"))
+			require.Equal(t, "link_visits 0-0/1", w.Header().Get("Content-Range"))
 
 			visitsResp := bodyAsJSON[[]visitDTO](t, w)
 			require.Equal(t, 1, len(visitsResp))
@@ -171,7 +171,7 @@ func TestApp_HappyPath(t *testing.T) {
 
 			w = makeRequest(t, app, "GET", "/api/link_visits?range=[1,1]", nil)
 			require.Equal(t, 200, w.Code)
-			require.Equal(t, "visits 1-1/2", w.Header().Get("Content-Range"))
+			require.Equal(t, "link_visits 1-1/2", w.Header().Get("Content-Range"))
 
 			visitsResp := bodyAsJSON[[]visitDTO](t, w)
 			require.Equal(t, 1, len(visitsResp))

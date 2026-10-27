@@ -42,7 +42,7 @@ func TestGetVisits(t *testing.T) {
 			},
 			wantStatus:       200,
 			wantBody:         loadResponseFixture(t, "get_visits-no-params"),
-			wantContentRange: "visits 0-4/10",
+			wantContentRange: "link_visits 0-4/10",
 		},
 		{
 			name: "visits from 2nd to 3rd got 3",
@@ -62,7 +62,7 @@ func TestGetVisits(t *testing.T) {
 			},
 			wantStatus:       200,
 			wantBody:         loadResponseFixture(t, "get_visits?range=[1,3]"),
-			wantContentRange: "visits 1-3/10",
+			wantContentRange: "link_visits 1-3/10",
 		},
 		{
 			name: "sort by IP DESC",
@@ -82,7 +82,7 @@ func TestGetVisits(t *testing.T) {
 			},
 			wantStatus:       200,
 			wantBody:         loadResponseFixture(t, "get_visits?sort=[ip,DESC]"),
-			wantContentRange: "visits 0-4/10",
+			wantContentRange: "link_visits 0-4/10",
 		},
 		{
 			name: "sort by reffer remapped",
@@ -98,7 +98,7 @@ func TestGetVisits(t *testing.T) {
 					}, nil)
 			},
 			wantStatus:       200,
-			wantContentRange: "visits */0",
+			wantContentRange: "link_visits */0",
 		},
 		{
 			name:       "range is too big",
@@ -198,6 +198,6 @@ func TestGetVisits(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, 200, w.Code)
-		require.Equal(t, "visits */0", w.Header().Get("Content-Range"))
+		require.Equal(t, "link_visits */0", w.Header().Get("Content-Range"))
 	})
 }

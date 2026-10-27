@@ -61,7 +61,7 @@ func (h *VisitsHandler) GetVisits(c *gin.Context) {
 	}
 
 	c.Header("Content-Range", formatContentRangeHeader(contentRangeParams{
-		itemName:   "visits",
+		itemName:   "link_visits",
 		itemsRange: rang,
 		itemsCount: len(result.Items),
 		totalCount: result.Total,
