@@ -284,6 +284,14 @@ func TestApp_RequestBigBody(t *testing.T) {
 		require.Equal(t, url, resp.OriginalURL)
 		require.Equal(t, code, resp.Shortname)
 	})
+
+	step(t, "body is too big", func(t *testing.T) {
+		bigBody := strings.Repeat("x", 1024*5)
+
+		w := makeRequest(t, app, "POST", "/api/links", bigBody)
+
+		require.Equal(t, 413, w.Code)
+	})
 }
 
 func TestApp_LongBaseURLAndShortcode(t *testing.T) {
