@@ -26,9 +26,7 @@ var (
 )
 
 func TestSmoke(t *testing.T) {
-	port := pickFreePort(t)
-
-	addr := fmt.Sprintf("127.0.0.1:%s", port)
+	addr := pickFreeAddr(t)
 	host := "http://" + addr
 	baseURL := "http://example.com"
 
@@ -80,10 +78,15 @@ func TestSmoke(t *testing.T) {
 	t.Run("error db down", func(t *testing.T) {
 		ctx := t.Context()
 
+		downDBURL := fmt.Sprintf(
+			"DATABASE_URL=postgres://test:test@%s/unknown-db?sslmode=disable",
+			pickFreeAddr(t),
+		)
+
 		cmd := exec.CommandContext(ctx, binaryPath)
 		cmd.Env = []string{
 			"ENV=production",
-			"DATABASE_URL=postgres://test:test@localhost:9999/unknown-db?sslmode=disable",
+			downDBURL,
 			"BASE_URL=" + baseURL,
 			"HTTP_ADDR=" + addr,
 		}
@@ -221,23 +224,15 @@ func requireStatus(t *testing.T, status int, url string) {
 	require.Equal(t, status, r.StatusCode)
 }
 
-func pickFreePort(t *testing.T) string {
+func pickFreeAddr(t *testing.T) string {
 	t.Helper()
 
-	from := 8080
-	to := 8090
+	conn, err := net.Listen("tcp", "127.0.0.1:")
+	require.NoError(t, err)
 
-	for p := from; p <= to; p++ {
-		port := fmt.Sprint(p)
+	addr := conn.Addr().String()
 
-		listener, err := net.Listen("tcp", ":"+port)
-		if err == nil {
-			require.NoError(t, listener.Close())
-			return port
-		}
-	}
+	require.NoError(t, conn.Close())
 
-	t.Fatalf("failed to pick free port in range %d-%d", from, to)
-
-	return ""
+	return addr
 }
