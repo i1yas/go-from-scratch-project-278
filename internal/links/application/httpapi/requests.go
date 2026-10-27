@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"hexleturlshort/internal/links/application"
-
 	"github.com/gin-gonic/gin"
+
+	"hexleturlshort/internal/links/application"
 )
 
 func parseRangeFromReq(c *gin.Context, maxSize int32, defaultRange application.Range) (application.Range, error) {
