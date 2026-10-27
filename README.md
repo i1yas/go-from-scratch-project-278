@@ -17,6 +17,7 @@
 ## Установка и запуск
 
 ### Требования
+
 - bash
 - git
 - GNU Make
@@ -38,7 +39,7 @@ make up                               # Запустить контейнер с
 
 Приложение с веб-интерфейсом и HTTP API будет доступно по адресу `localhost:8080`
 
-Приложение запускается внутри контейнера, через `docker-compose.yml`. Используются [переменные окружения](#переменные-окружения) `ENV` и  `BASE_URL`. Для подключения к базе данных используется внутренний адрес compose, а адрес HTTP сервера переназначен на `localhost:8080` для локальной разработки.
+Приложение запускается внутри контейнера, через `docker-compose.yml`. Используются [переменные окружения](#переменные-окружения) `ENV` и `BASE_URL`. Для подключения к базе данных используется внутренний адрес compose, а адрес HTTP сервера переназначен на `localhost:8080` для локальной разработки.
 
 ## Использование
 
@@ -48,7 +49,7 @@ make up                               # Запустить контейнер с
 ### Создание короткой ссылки
 
 ```bash
-curl -X POST http://localhost:8080/api/links \
+curl -i -X POST http://localhost:8080/api/links \
     -H 'Content-Type: application/json' \
     -d '{"original_url":"https://google.com","short_name":"google"}'
 ```
@@ -73,8 +74,11 @@ Content-Type: application/json
 
 ### Изменение ссылки
 
+Установите переменную окружения `ID`, например `1`:
+
 ```bash
-curl -X PUT http://localhost:8080/api/links/1 \
+export ID=1
+curl -i -X PUT http://localhost:8080/api/links/$ID \
     -H 'Content-Type: application/json' \
     -d '{"original_url":"https://google.com/some-page","short_name":"google"}'
 ```
@@ -95,10 +99,96 @@ Content-Type: application/json
 }
 ```
 
+### Посмотреть информацию о ссылке по ID
+
+```bash
+export ID=1
+curl -i http://localhost:8080/api/links/$ID
+```
+
+Ответ
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+    "id": 1,
+    "original_url": "https://google.com/some-page",
+    "short_name": "google",
+    "short_url": "http://localhost:8080/r/google"
+}
+```
+
+### Посмотреть список ссылок
+Параметр `range` (в формате [Range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range)), выставляем `[0,99]` чтобы получить первые 100 ссылок:
+```bash
+curl -i --get http://localhost:8080/api/links -d 'range=[0,99]'
+```
+
+Ответ
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Range: links 0-0/1
+```
+
+```json
+[
+    {
+        "id": 1,
+        "original_url": "https://google.com/some-page",
+        "short_name": "google",
+        "short_url": "http://localhost:8080/r/google"
+    }
+]
+```
+
+### Посмотреть список переходов по ссылкам
+Параметр `range` (в формате [Range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range)), выставляем `[0,99]` чтобы получить первые 100 переходов:
+```bash
+curl -i --get http://localhost:8080/api/link_visits -d 'range=[0,99]'
+```
+
+Ответ
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Range: link_visits 0-1/2
+```
+
+```json
+[
+    {
+        "id": 1,
+        "link_id": 1,
+        "ip": "127.0.0.1",
+        "referer": "",
+        "status": 302,
+        "user_agent": "curl/7.81.0",
+        "created_at": "2026-10-11T17:22:22Z"
+    },
+    {
+        "id": 2,
+        "link_id": 1,
+        "ip": "::1",
+        "referer": "http://mysite",
+        "status": 302,
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+        "created_at": "2026-10-25:13:10:07Z"
+    }
+]
+```
+
 ### Удаление ссылки
 
 ```bash
-curl -X DELETE http://localhost:8080/api/links/1
+export ID=1
+curl -i -X DELETE http://localhost:8080/api/links/$ID
 ```
 
 Ответ
@@ -114,6 +204,7 @@ HTTP/1.1 204 No Content
 Для запуска сервера потребуется база данных Postgres. В корне проекта приложен `docker-compose.yml` с БД. Описание `.env.dev` в разделе ["переменные окружения"](#переменные-окружения)
 
 ### Требования
+
 - bash
 - git
 - GNU Make
@@ -157,13 +248,13 @@ make dev                              # Запустить сервер и фр�
 
 Приложение использует переменные окружения для конфигурации. Если в корне проекта лежит файл `.env`, приложение вычитает переменные из файла.
 
-| Название       | Обязательно | По умолчанию  | Описание                             |
-| -------------- | ----------- | ------------- | ------------------------------------ |
-| `ENV`          | Нет         | `production`  | Определяет режим работы приложения   |
-| `BASE_URL`     | Да          |               | URL для формирования короткой ссылки |
-| `DATABASE_URL` | Да          |               | URL для подключения к Postgres       |
-| `HTTP_ADDR`    | Нет         | `:8080`       | Адрес HTTP API в форме `HOST:PORT`   |
-| `SENTRY_DSN`   | Нет         |               | DSN для подключения мониторинга      |
+| Название       | Обязательно | По умолчанию | Описание                             |
+| -------------- | ----------- | ------------ | ------------------------------------ |
+| `ENV`          | Нет         | `production` | Определяет режим работы приложения   |
+| `BASE_URL`     | Да          |              | URL для формирования короткой ссылки |
+| `DATABASE_URL` | Да          |              | URL для подключения к Postgres       |
+| `HTTP_ADDR`    | Нет         | `:8080`      | Адрес HTTP API в форме `HOST:PORT`   |
+| `SENTRY_DSN`   | Нет         |              | DSN для подключения мониторинга      |
 
 Возможные значения `ENV`:
 
