@@ -108,7 +108,7 @@ func (app *App) Run(ctx context.Context) error {
 
 		app.Logger.Info("shutting down apiapp")
 
-		stopErr <- app.Stop(context.Background())
+		stopErr <- app.stop(context.Background())
 	}()
 
 	app.Logger.Info("starting server",
@@ -128,8 +128,8 @@ func (app *App) Run(ctx context.Context) error {
 	return nil
 }
 
-// Stop stops application
-func (app *App) Stop(ctx context.Context) error {
+// stop stops application
+func (app *App) stop(ctx context.Context) error {
 	shutdownCtx, cancel := context.WithTimeout(
 		ctx,
 		time.Second*10,
