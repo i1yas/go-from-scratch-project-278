@@ -615,13 +615,7 @@ func setupTestDB(t *testing.T) string {
 
 	require.NoError(t, pg.Migrate(migrationsDir(t)))
 
-	t.Cleanup(func() {
-		err := pg.DB.Close()
-		require.NoError(t, err)
-
-		err = pg.Container.Terminate(context.Background())
-		require.NoError(t, err)
-	})
+	testDBURL = pg.URL
 
 	return pg.URL
 }
