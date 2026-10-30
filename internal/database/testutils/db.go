@@ -3,6 +3,8 @@ package testutils
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -57,4 +59,20 @@ func SetupTestPostgres(ctx context.Context) (TestPostgres, error) {
 // Migrate runs migrations on test postgres
 func (tpg TestPostgres) Migrate(migrationsDir string) error {
 	return goose.Up(tpg.DB, migrationsDir)
+}
+
+// TruncateTables truncates tables
+func (tpg TestPostgres) TruncateTables(ctx context.Context, tables ...string) error {
+	if len(tables) == 0 {
+		return nil
+	}
+
+	query := fmt.Sprintf("TRUNCATE %s;", strings.Join(tables, ","))
+
+	_, err := tpg.DB.ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
