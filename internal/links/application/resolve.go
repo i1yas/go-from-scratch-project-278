@@ -7,6 +7,7 @@ import (
 	"github.com/getsentry/sentry-go"
 
 	"hexleturlshort/internal/links"
+	"hexleturlshort/internal/logging"
 )
 
 // ResolveLinkParams contains information about link visit
@@ -37,6 +38,7 @@ func (s *Service) ResolveLink(ctx context.Context, params ResolveLinkParams) (li
 
 func (s *Service) recordVisit(ctx context.Context, linkID int64, params ResolveLinkParams) {
 	hub := sentry.GetHubFromContext(ctx)
+	log := logging.FromContext(ctx, s.logger)
 
 	visit, err := links.NewVisit(
 		linkID,
@@ -46,7 +48,7 @@ func (s *Service) recordVisit(ctx context.Context, linkID int64, params ResolveL
 		params.Status,
 	)
 	if err != nil {
-		s.logger.Warn("failed to construct visit",
+		log.Warn("failed to construct visit",
 			slog.String("error", err.Error()),
 		)
 		reportError(hub, err)
@@ -56,7 +58,7 @@ func (s *Service) recordVisit(ctx context.Context, linkID int64, params ResolveL
 
 	err = s.visits.CreateVisit(ctx, visit)
 	if err != nil {
-		s.logger.Error("failed to record visit",
+		log.Error("failed to record visit",
 			slog.String("error", err.Error()),
 		)
 		reportError(hub, err)
