@@ -1,6 +1,10 @@
 package application
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/getsentry/sentry-go"
+)
 
 var (
 	ErrLinkNotFound                    = errors.New("link not found")
@@ -10,3 +14,11 @@ var (
 	ErrStoreInternal                   = errors.New("store internal error")
 	ErrInvalidStoreValue               = errors.New("invalid store value")
 )
+
+func reportError(hub *sentry.Hub, err error) {
+	if hub == nil {
+		return
+	}
+
+	hub.CaptureException(err)
+}
