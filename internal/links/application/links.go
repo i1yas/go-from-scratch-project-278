@@ -18,8 +18,20 @@ type LinksResult struct {
 	Items []links.Link
 }
 
+var getLinksSupportedSortField = map[string]struct{}{
+	"id":           {},
+	"original_url": {},
+	"shortcode":    {},
+	"short_url":    {},
+}
+
 // GetLinks is use-case for listing links
 func (s *Service) GetLinks(ctx context.Context, params GetLinksParams) (LinksResult, error) {
+	_, fieldIsSupported := getLinksSupportedSortField[params.Sort.SortBy]
+	if !fieldIsSupported {
+		return LinksResult{}, ErrUnsupportedSortOrder
+	}
+
 	totalCount, err := s.links.GetLinksTotalCount(ctx)
 	if err != nil {
 		return LinksResult{}, err

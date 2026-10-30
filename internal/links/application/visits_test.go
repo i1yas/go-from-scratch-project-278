@@ -53,20 +53,18 @@ func TestGetVisits(t *testing.T) {
 			wantItems: nil,
 		},
 		{
-			name: "unsupported sorting",
-			rang: testutils.Range(t, 0, 2),
-			sort: testutils.SortOrder(t, "unknown", "ASC"),
-			setup: func(store *fakeVisitsStore) {
-				store.
-					On("GetVisitsTotalCount", mock.Anything).
-					Return(int64(10), nil).
-					On("GetVisits", mock.Anything, application.GetVisitsParams{
-						Range: testutils.Range(t, 0, 2),
-						Sort:  testutils.SortOrder(t, "unknown", "ASC"),
-					}).
-					Return([]links.Visit{}, application.ErrUnsupportedSortOrder)
-			},
-			err: application.ErrUnsupportedSortOrder,
+			name:  "unsupported sorting",
+			rang:  testutils.Range(t, 0, 2),
+			sort:  testutils.SortOrder(t, "unknown", "ASC"),
+			setup: func(*fakeVisitsStore) {},
+			err:   application.ErrUnsupportedSortOrder,
+		},
+		{
+			name:  "unsupported sorting with empty store",
+			rang:  testutils.Range(t, 0, 2),
+			sort:  testutils.SortOrder(t, "unknown", "ASC"),
+			setup: func(*fakeVisitsStore) {},
+			err:   application.ErrUnsupportedSortOrder,
 		},
 		{
 			name: "store error on total count",

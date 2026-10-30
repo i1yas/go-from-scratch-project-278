@@ -53,20 +53,18 @@ func TestGetLinks(t *testing.T) {
 			wantItems: nil,
 		},
 		{
-			name: "unsupported sorting",
-			rang: testutils.Range(t, 0, 2),
-			sort: testutils.SortOrder(t, "unknown", "ASC"),
-			setup: func(store *fakeLinksStore) {
-				store.
-					On("GetLinksTotalCount", mock.Anything).
-					Return(int64(10), nil).
-					On("GetLinks", mock.Anything, application.GetLinksParams{
-						Range: testutils.Range(t, 0, 2),
-						Sort:  testutils.SortOrder(t, "unknown", "ASC"),
-					}).
-					Return([]links.Link{}, application.ErrUnsupportedSortOrder)
-			},
-			err: application.ErrUnsupportedSortOrder,
+			name:  "unsupported sorting",
+			rang:  testutils.Range(t, 0, 2),
+			sort:  testutils.SortOrder(t, "unknown", "ASC"),
+			setup: func(*fakeLinksStore) {},
+			err:   application.ErrUnsupportedSortOrder,
+		},
+		{
+			name:  "unsupported sorting with empty store",
+			rang:  testutils.Range(t, 0, 2),
+			sort:  testutils.SortOrder(t, "unknown", "ASC"),
+			setup: func(*fakeLinksStore) {},
+			err:   application.ErrUnsupportedSortOrder,
 		},
 		{
 			name: "store error on total count",
