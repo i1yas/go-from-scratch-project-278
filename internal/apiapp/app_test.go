@@ -437,6 +437,77 @@ func TestApp_ResolveLinkWithLongHeaders(t *testing.T) {
 	})
 }
 
+func TestApp_InvalidSort(t *testing.T) {
+	dbURL := setupTestDB(t)
+	clearTestDB(t)
+
+	ctx := t.Context()
+
+	app, err := New(ctx, config.Config{
+		Env: config.EnvProduction,
+		App: config.App{
+			BaseURL: "http://example.com",
+		},
+		Database: config.Database{
+			URL: dbURL,
+		},
+		HTTP: config.HTTP{
+			Addr: ":8080",
+		},
+	}, discardLogger())
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+
+	step(t, "empty db", func(t *testing.T) {
+		w := makeRequest(t, app, "GET", `/api/links?sort=["unknown","ASC"]`, nil)
+		require.Equal(t, 400, w.Code)
+
+		w = makeRequest(t, app, "GET", `/api/links?sort=["id","unknown"]`, nil)
+		require.Equal(t, 400, w.Code)
+
+		w = makeRequest(t, app, "GET", `/api/link_visits?sort=["unknown","ASC"]`, nil)
+		require.Equal(t, 400, w.Code)
+
+		w = makeRequest(t, app, "GET", `/api/link_visits?sort=["id","unknown"]`, nil)
+		require.Equal(t, 400, w.Code)
+	})
+
+	step(t, "add link and visit", func(t *testing.T) {
+		w := makeRequest(t, app, "POST", "/api/links", linkDTO{
+			OriginalURL: "http://test.com",
+			Shortname:   "test",
+		})
+		require.Equal(t, 201, w.Code)
+
+		clientIP := "1.2.3.4"
+
+		req, err := http.NewRequest("GET", "/r/test", nil)
+		require.NoError(t, err)
+
+		req.Header.Set(gin.PlatformCloudflare, clientIP)
+
+		w = httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
+
+		require.Equal(t, 302, w.Code)
+	})
+
+	step(t, "db with data", func(t *testing.T) {
+		w := makeRequest(t, app, "GET", `/api/links?sort=["unknown","ASC"]`, nil)
+		require.Equal(t, 400, w.Code)
+
+		w = makeRequest(t, app, "GET", `/api/links?sort=["id","unknown"]`, nil)
+		require.Equal(t, 400, w.Code)
+
+		w = makeRequest(t, app, "GET", `/api/link_visits?sort=["unknown","ASC"]`, nil)
+		require.Equal(t, 400, w.Code)
+
+		w = makeRequest(t, app, "GET", `/api/link_visits?sort=["id","unknown"]`, nil)
+		require.Equal(t, 400, w.Code)
+	})
+}
+
 func TestApp_RunAndStop(t *testing.T) {
 	dbURL := setupTestDB(t)
 
@@ -599,7 +670,10 @@ func linkURL(id int64) string {
 	return fmt.Sprintf("/api/links/%d", id)
 }
 
-var testDBURL string
+var (
+	testPG    *testutils.TestPostgres
+	testDBURL string
+)
 
 func setupTestDB(t *testing.T) string {
 	t.Helper()
@@ -615,9 +689,19 @@ func setupTestDB(t *testing.T) string {
 
 	require.NoError(t, pg.Migrate(migrationsDir(t)))
 
+	testPG = &pg
 	testDBURL = pg.URL
 
 	return pg.URL
+}
+
+func clearTestDB(t *testing.T) {
+	t.Helper()
+
+	require.NotNil(t, testPG)
+
+	err := testPG.TruncateTables(t.Context(), "visits", "links")
+	require.NoError(t, err)
 }
 
 func makeRequest(t *testing.T, app *App, method, url string, body any) *httptest.ResponseRecorder {
