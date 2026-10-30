@@ -53,10 +53,15 @@ func NewVisit(
 }
 
 func truncate(s string, maxLen int) string {
-	rs := []rune(s)
-	if len(rs) <= maxLen {
-		return s
+	// NOTE: count != i, count - character count, i - byte index of character
+	count := 0
+	for i := range s {
+		if count == maxLen {
+			return s[:i]
+		}
+
+		count++
 	}
 
-	return string(rs[0:maxLen])
+	return s
 }
