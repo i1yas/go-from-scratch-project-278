@@ -66,11 +66,7 @@ func TestGetVisitsRange(t *testing.T) {
 				})
 				require.NoError(t, err)
 
-				require.Equal(t, len(tc.wantItems), len(got))
-
-				for i := range tc.wantItems {
-					require.Equal(t, tc.wantItems[i], got[i].ID)
-				}
+				require.Equal(t, tc.wantItems, visitsIDs(got))
 			})
 		}
 	})
