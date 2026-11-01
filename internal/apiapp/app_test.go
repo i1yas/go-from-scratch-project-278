@@ -126,63 +126,72 @@ func TestApp_HappyPath(t *testing.T) {
 	})
 
 	step(t, "resolve link", func(t *testing.T) {
-		clientIP := "1.2.3.4"
-		//nolint:lll
-		clientReferer := "http://example.com/page/page/page?param1=29a6e0c3-d99d-47e7-b85d-57182cc2d4fe&param2=5f591642-c757-45a1-99a6-31bda9d02a77"
-		//nolint:lll
-		clientUserAgent := "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15"
+		visits := []struct {
+			name             string
+			ip               string
+			referer          string
+			userAgent        string
+			query            string
+			wantContentRange string
+		}{
+			{
+				name: "first visit",
+				ip:   "1.2.4.5",
+				//nolint:lll
+				referer: "http://example.com/page/page/page?param1=29a6e0c3-d99d-47e7-b85d-57182cc2d4fe&param2=5f591642-c757-45a1-99a6-31bda9d02a77",
+				//nolint:lll
+				userAgent:        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15",
+				query:            "range=[0,0]",
+				wantContentRange: "link_visits 0-0/1",
+			},
+			{
+				name:             "second visit",
+				ip:               "5.6.7.8",
+				referer:          "",
+				userAgent:        "",
+				query:            "range=[1,1]",
+				wantContentRange: "link_visits 1-1/2",
+			},
+		}
 
-		resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
-		req, err := http.NewRequest("GET", resolveLinkURL, nil)
-		require.NoError(t, err)
+		gotVisits := []visitDTO{}
 
-		req.Header.Set(gin.PlatformCloudflare, clientIP)
-		req.Header.Set("Referer", clientReferer)
-		req.Header.Set("User-Agent", clientUserAgent)
+		for _, v := range visits {
+			step(t, v.name, func(t *testing.T) {
+				resolveLinkURL := fmt.Sprintf("/r/%s", createdLink.Shortname)
+				req, err := http.NewRequest("GET", resolveLinkURL, nil)
+				require.NoError(t, err)
 
-		step(t, "first visit", func(t *testing.T) {
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
+				req.Header.Set(gin.PlatformCloudflare, v.ip)
+				req.Header.Set("Referer", v.referer)
+				req.Header.Set("User-Agent", v.userAgent)
 
-			require.Equal(t, 302, w.Code)
-			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+				w := httptest.NewRecorder()
+				app.Router.ServeHTTP(w, req)
 
-			w = makeRequest(t, app, "GET", "/api/link_visits?range=[0,0]", nil)
-			require.Equal(t, 200, w.Code)
-			require.Equal(t, "link_visits 0-0/1", w.Header().Get("Content-Range"))
+				require.Equal(t, 302, w.Code)
+				require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
 
-			visitsResp := bodyAsJSON[[]visitDTO](t, w)
-			require.Equal(t, 1, len(visitsResp))
+				w = makeRequest(t, app, "GET", "/api/link_visits?"+v.query, nil)
+				require.Equal(t, 200, w.Code)
+				require.Equal(t, v.wantContentRange, w.Header().Get("Content-Range"))
 
-			gotVisit := visitsResp[0]
+				visitsResp := bodyAsJSON[[]visitDTO](t, w)
+				require.Equal(t, 1, len(visitsResp))
 
-			require.Equal(t, createdLink.ID, gotVisit.LinkID)
-			require.Equal(t, clientIP, gotVisit.IP)
-			require.Equal(t, clientReferer, gotVisit.Referer)
-			require.Equal(t, clientUserAgent, gotVisit.UserAgent)
-		})
+				gotVisit := visitsResp[0]
 
-		step(t, "second visit", func(t *testing.T) {
-			w := httptest.NewRecorder()
-			app.Router.ServeHTTP(w, req)
+				require.Equal(t, createdLink.ID, gotVisit.LinkID)
+				require.Equal(t, v.ip, gotVisit.IP)
+				require.Equal(t, v.referer, gotVisit.Referer)
+				require.Equal(t, v.userAgent, gotVisit.UserAgent)
 
-			require.Equal(t, 302, w.Code)
-			require.Equal(t, createdLink.OriginalURL, w.Header().Get("Location"))
+				gotVisits = append(gotVisits, gotVisit)
+			})
+		}
 
-			w = makeRequest(t, app, "GET", "/api/link_visits?range=[1,1]", nil)
-			require.Equal(t, 200, w.Code)
-			require.Equal(t, "link_visits 1-1/2", w.Header().Get("Content-Range"))
-
-			visitsResp := bodyAsJSON[[]visitDTO](t, w)
-			require.Equal(t, 1, len(visitsResp))
-
-			gotVisit := visitsResp[0]
-
-			require.Equal(t, createdLink.ID, gotVisit.LinkID)
-			require.Equal(t, clientIP, gotVisit.IP)
-			require.Equal(t, clientReferer, gotVisit.Referer)
-			require.Equal(t, clientUserAgent, gotVisit.UserAgent)
-		})
+		require.Equal(t, 2, len(gotVisits))
+		require.Greater(t, gotVisits[1].ID, gotVisits[0].ID)
 	})
 
 	step(t, "resolve link without IP, no visit recorded", func(t *testing.T) {
