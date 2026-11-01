@@ -77,7 +77,7 @@ func TestApp_HappyPath(t *testing.T) {
 			Shortname:   code,
 		})
 
-		require.Equal(t, 409, w.Code)
+		require.Equal(t, 422, w.Code)
 
 		w = makeRequest(t, app, "GET", linkURL(resp.ID), nil)
 

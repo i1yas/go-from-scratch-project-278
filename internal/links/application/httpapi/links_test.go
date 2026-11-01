@@ -429,7 +429,7 @@ func TestCreateLink(t *testing.T) {
 					}).
 					Return(links.Link{}, application.ErrShortCodeConflict)
 			},
-			wantStatus:    409,
+			wantStatus:    422,
 			wantErrFields: []string{"short_name"},
 		},
 		{
@@ -575,7 +575,7 @@ func TestUpdateLink(t *testing.T) {
 					}).
 					Return(links.Link{}, application.ErrShortCodeConflict)
 			},
-			wantStatus:    409,
+			wantStatus:    422,
 			wantErrFields: []string{"short_name"},
 		},
 		{

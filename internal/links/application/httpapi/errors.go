@@ -66,7 +66,7 @@ var errorsMappings = []errorResponse{
 	},
 	{
 		originalErr: application.ErrShortCodeConflict,
-		status:      http.StatusConflict,
+		status:      http.StatusUnprocessableEntity,
 		Errors: map[string]string{
 			"short_name": "link with same short_name already exist",
 		},
