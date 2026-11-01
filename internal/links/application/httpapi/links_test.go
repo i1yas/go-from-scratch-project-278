@@ -1,11 +1,15 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -339,11 +343,12 @@ func TestCreateLink(t *testing.T) {
 	code := "link-101"
 
 	cases := []struct {
-		name        string
-		requestBody string
-		setup       func(svg *fakeLinkService)
-		wantStatus  int
-		wantBody    string
+		name          string
+		requestBody   string
+		setup         func(svg *fakeLinkService)
+		wantStatus    int
+		wantBody      string
+		wantErrFields []string
 	}{
 		{
 			name: "create with shortcode",
@@ -406,23 +411,9 @@ func TestCreateLink(t *testing.T) {
 			requestBody: `{
 				"original_url": "bla"
 			}`,
-			setup: func(svc *fakeLinkService) {
-				svc.
-					On("CreateLink", mock.Anything, application.CreateLinkParams{
-						OriginalURL: "bla",
-					}).
-					Return(links.Link{}, &links.ValidationError{
-						Fields: []links.FieldError{
-							{Field: "original_url", Err: links.ErrInvlalidURL},
-						},
-					})
-			},
-			wantStatus: 422,
-			wantBody: `{
-				"errors": {
-					"original_url": "invalid url"
-				}
-			}`,
+			setup:         func(*fakeLinkService) {},
+			wantStatus:    422,
+			wantErrFields: []string{"original_url"},
 		},
 		{
 			name: "shortcode conflict",
@@ -438,12 +429,8 @@ func TestCreateLink(t *testing.T) {
 					}).
 					Return(links.Link{}, application.ErrShortCodeConflict)
 			},
-			wantStatus: 409,
-			wantBody: `{
-				"errors": {
-					"short_name": "link with same short_name already exist"
-				}
-			}`,
+			wantStatus:    409,
+			wantErrFields: []string{"short_name"},
 		},
 		{
 			name:        "error invalid request",
@@ -483,6 +470,10 @@ func TestCreateLink(t *testing.T) {
 				require.JSONEq(t, tc.wantBody, w.Body.String())
 			}
 
+			if tc.wantErrFields != nil {
+				requireFieldErrors(t, w.Body.Bytes(), tc.wantErrFields)
+			}
+
 			linksSvc.AssertExpectations(t)
 		})
 	}
@@ -490,12 +481,13 @@ func TestCreateLink(t *testing.T) {
 
 func TestUpdateLink(t *testing.T) {
 	cases := []struct {
-		name        string
-		url         string
-		requestBody string
-		setup       func(svg *fakeLinkService)
-		wantStatus  int
-		wantBody    string
+		name          string
+		url           string
+		requestBody   string
+		setup         func(svg *fakeLinkService)
+		wantStatus    int
+		wantBody      string
+		wantErrFields []string
 	}{
 		{
 			name: "update link",
@@ -544,24 +536,9 @@ func TestUpdateLink(t *testing.T) {
 			requestBody: `{
 				"original_url": "http://domain101.com"
 			}`,
-			setup: func(svc *fakeLinkService) {
-				svc.
-					On("UpdateLink", mock.Anything, application.UpdateLinkParams{
-						ID:          101,
-						OriginalURL: "http://domain101.com",
-					}).
-					Return(links.Link{}, &links.ValidationError{
-						Fields: []links.FieldError{
-							{Field: "shortcode", Err: links.ErrInvlalidShortCode},
-						},
-					})
-			},
-			wantStatus: 422,
-			wantBody: `{
-				"errors": {
-					"short_name": "invalid shortcode"
-				}
-			}`,
+			setup:         func(*fakeLinkService) {},
+			wantStatus:    422,
+			wantErrFields: []string{"short_name"},
 		},
 		{
 			name: "link not found",
@@ -598,12 +575,8 @@ func TestUpdateLink(t *testing.T) {
 					}).
 					Return(links.Link{}, application.ErrShortCodeConflict)
 			},
-			wantStatus: 409,
-			wantBody: `{
-				"errors": {
-					"short_name": "link with same short_name already exist"
-				}
-			}`,
+			wantStatus:    409,
+			wantErrFields: []string{"short_name"},
 		},
 		{
 			name:        "error invalid request",
@@ -617,7 +590,8 @@ func TestUpdateLink(t *testing.T) {
 			name: "internal error",
 			url:  "/api/links/101",
 			requestBody: `{
-				"original_url": "http://domain101.com"
+				"original_url": "http://domain101.com",
+				"short_name": "test"
 			}`,
 			setup: func(svc *fakeLinkService) {
 				svc.On("UpdateLink", mock.Anything, mock.Anything).
@@ -643,6 +617,10 @@ func TestUpdateLink(t *testing.T) {
 
 			if tc.wantBody != "" {
 				require.JSONEq(t, tc.wantBody, w.Body.String())
+			}
+
+			if tc.wantErrFields != nil {
+				requireFieldErrors(t, w.Body.Bytes(), tc.wantErrFields)
 			}
 
 			linksSvc.AssertExpectations(t)
@@ -811,5 +789,36 @@ func TestResolveLink(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
+
+	err := RegisterValidators()
+	if err != nil {
+		log.Fatalf("failed to register validators: %v", err)
+	}
+
 	os.Exit(m.Run())
+}
+
+func requireFieldErrors(t *testing.T, data []byte, expectedKeys []string) {
+	t.Helper()
+
+	var got map[string]any
+
+	err := json.Unmarshal(data, &got)
+	require.NoError(t, err,
+		fmt.Sprintf("error response should be json object, error: %v", err),
+	)
+
+	errs, ok := got["errors"]
+	require.True(t, ok,
+		fmt.Sprintf("field errors should be in 'errors' key, got %v", got),
+	)
+
+	errsMap, ok := errs.(map[string]any)
+	require.True(t, ok,
+		fmt.Sprintf("field errors should be string to string map, got %v", errs),
+	)
+
+	gotKeys := slices.Collect(maps.Keys(errsMap))
+
+	require.ElementsMatch(t, expectedKeys, gotKeys)
 }

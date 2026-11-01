@@ -8,6 +8,7 @@ import (
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 
 	"hexleturlshort/internal/links"
 	"hexleturlshort/internal/links/application"
@@ -100,6 +101,16 @@ func handleError(logger *slog.Logger, c *gin.Context, err error) {
 		return
 	}
 
+	var validationErrors validator.ValidationErrors
+
+	if ok := errors.As(err, &validationErrors); ok {
+		c.JSON(http.StatusUnprocessableEntity, errorResponse{
+			Errors: validationErrorsMap(validationErrors),
+		})
+
+		return
+	}
+
 	for _, internalErr := range internalErrors {
 		if errors.Is(err, internalErr) {
 			handleInternalError(logger, c, err)
@@ -134,6 +145,16 @@ func handleInternalError(logger *slog.Logger, c *gin.Context, err error) {
 		slog.String("error", err.Error()),
 	)
 	reportError(c, err)
+}
+
+func validationErrorsMap(errs validator.ValidationErrors) map[string]string {
+	errsMap := make(map[string]string, len(errs))
+
+	for _, vErr := range errs {
+		errsMap[vErr.Field()] = vErr.Error()
+	}
+
+	return errsMap
 }
 
 func convertFieldErrorsToMap(errs []links.FieldError) map[string]string {

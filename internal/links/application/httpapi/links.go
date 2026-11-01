@@ -86,8 +86,8 @@ func (h *LinksHandler) GetLinks(c *gin.Context) {
 }
 
 type createLinkRequest struct {
-	OriginalURL string  `json:"original_url"`
-	ShortName   *string `json:"short_name,omitempty"`
+	OriginalURL string  `json:"original_url" binding:"required,link_url"`
+	ShortName   *string `json:"short_name,omitempty" binding:"omitempty,shortcode"`
 }
 
 // CreateLink creates link
@@ -147,8 +147,8 @@ func (h *LinksHandler) GetLinkByID(c *gin.Context) {
 }
 
 type updateLinkRequest struct {
-	OriginalURL string `json:"original_url"`
-	ShortName   string `json:"short_name"`
+	OriginalURL string `json:"original_url" binding:"required,link_url"`
+	ShortName   string `json:"short_name" binding:"required,shortcode"`
 }
 
 // UpdateLink updates link
