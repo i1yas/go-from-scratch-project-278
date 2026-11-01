@@ -22,12 +22,13 @@ import (
 )
 
 var (
-	ErrFailedToOpenDB            = errors.New("failed to open db")
-	ErrFailedToReadConfigFromEnv = errors.New("failed to read config from environment")
-	ErrFailedToCreateShortURLGen = errors.New("failed to create short url generator")
-	ErrFailedToStartServer       = errors.New("failed to start server")
-	ErrFailedToStopApp           = errors.New("failed to stop application")
-	ErrFailedToInitSentry        = errors.New("failed to init sentry client")
+	ErrFailedToOpenDB             = errors.New("failed to open db")
+	ErrFailedToRegisterValidators = errors.New("failed to register validators")
+	ErrFailedToReadConfigFromEnv  = errors.New("failed to read config from environment")
+	ErrFailedToCreateShortURLGen  = errors.New("failed to create short url generator")
+	ErrFailedToStartServer        = errors.New("failed to start server")
+	ErrFailedToStopApp            = errors.New("failed to stop application")
+	ErrFailedToInitSentry         = errors.New("failed to init sentry client")
 )
 
 // App contains application components
@@ -64,6 +65,11 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 		codeGenerator,
 		logger,
 	)
+
+	err = httpapi.RegisterValidators()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrFailedToRegisterValidators, err)
+	}
 
 	linksHandler := httpapi.NewLinksHandler(service, shortURLGen, logger)
 	visitsHandler := httpapi.NewVisitsHandler(service, logger)
