@@ -55,42 +55,36 @@ func TestCreateAndGetLink(t *testing.T) {
 	}
 }
 
-func TestGetLinksPagination(t *testing.T) {
+func TestGetLinks_Range(t *testing.T) {
 	cases := []struct {
-		name        string
-		from        int
-		to          int
-		resultCount int
+		name      string
+		rang      application.Range
+		wantItems []int64
 	}{
 		{
-			name:        "first link",
-			from:        0,
-			to:          0,
-			resultCount: 1,
+			name:      "first link",
+			rang:      testutils.Range(t, 0, 0),
+			wantItems: []int64{1},
 		},
 		{
-			name:        "second link",
-			from:        1,
-			to:          1,
-			resultCount: 1,
+			name:      "second link",
+			rang:      testutils.Range(t, 1, 1),
+			wantItems: []int64{2},
 		},
 		{
-			name:        "from 0 to 3",
-			from:        0,
-			to:          3,
-			resultCount: 4,
+			name:      "from 0 to 3",
+			rang:      testutils.Range(t, 0, 3),
+			wantItems: []int64{1, 2, 3, 4},
 		},
 		{
-			name:        "from 0 to 3, total 4",
-			from:        0,
-			to:          3,
-			resultCount: 4,
+			name:      "from 7 to 15, got 3",
+			rang:      testutils.Range(t, 7, 15),
+			wantItems: []int64{8, 9, 10},
 		},
 		{
-			name:        "from 30 to 40, total 0",
-			from:        30,
-			to:          40,
-			resultCount: 0,
+			name:      "from 30 to 40, got 0",
+			rang:      testutils.Range(t, 30, 40),
+			wantItems: []int64{},
 		},
 	}
 
@@ -103,16 +97,13 @@ func TestGetLinksPagination(t *testing.T) {
 
 				linksStore := NewLinksStore(tx)
 
-				linksRange, err := application.NewRange(int32(tc.from), int32(tc.to))
-				require.NoError(t, err)
-
 				loadedLinks, err := linksStore.GetLinks(ctx, application.GetLinksParams{
-					Range: linksRange,
+					Range: tc.rang,
 					Sort:  testutils.SortOrder(t, "id", "ASC"),
 				})
 
 				require.NoError(t, err)
-				require.Equal(t, tc.resultCount, len(loadedLinks))
+				require.Equal(t, tc.wantItems, linksIDs(loadedLinks))
 			})
 		})
 	}
