@@ -14,7 +14,7 @@ import (
 	"hexleturlshort/internal/links/application/testutils"
 )
 
-func TestGetVisitsRange(t *testing.T) {
+func TestGetVisits_Range(t *testing.T) {
 	cases := []struct {
 		name      string
 		rang      application.Range
@@ -72,7 +72,7 @@ func TestGetVisitsRange(t *testing.T) {
 	})
 }
 
-func TestGetVisitsSort(t *testing.T) {
+func TestGetVisits_Sort(t *testing.T) {
 	cases := []struct {
 		name      string
 		sortBy    string
@@ -194,7 +194,7 @@ func TestGetVisitsSort(t *testing.T) {
 	})
 }
 
-func TestGetVisitsFormatting(t *testing.T) {
+func TestGetVisits_Formatting(t *testing.T) {
 	db := setupTestDB(t)
 
 	withTx(t, db, func(ctx context.Context, tx *sql.Tx) {
@@ -239,7 +239,7 @@ func TestGetVisitsFormatting(t *testing.T) {
 	})
 }
 
-func TestGetVisitsErrors(t *testing.T) {
+func TestGetVisits_Errors(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
 		t.Run("internal error", func(t *testing.T) {
 			db := setupTestDB(t)

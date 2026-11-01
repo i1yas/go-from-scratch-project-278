@@ -109,7 +109,7 @@ func TestGetLinks_Range(t *testing.T) {
 	}
 }
 
-func TestGetLinksSorting(t *testing.T) {
+func TestGetLinks_Sorting(t *testing.T) {
 	cases := []struct {
 		name        string
 		sortBy      string
@@ -190,7 +190,7 @@ func TestGetLinksSorting(t *testing.T) {
 	}
 }
 
-func TestGetLinksErrors(t *testing.T) {
+func TestGetLinks_Errors(t *testing.T) {
 	validRange, err := application.NewRange(0, 5)
 	require.NoError(t, err)
 
