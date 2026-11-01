@@ -118,15 +118,6 @@ func handleError(logger *slog.Logger, c *gin.Context, err error) {
 		}
 	}
 
-	verr, ok := errors.AsType[*links.ValidationError](err)
-	if ok {
-		c.JSON(http.StatusUnprocessableEntity, errorResponse{
-			Errors: convertFieldErrorsToMap(verr.Fields),
-		})
-
-		return
-	}
-
 	for _, mappedErr := range errorsMappings {
 		if errors.Is(err, mappedErr.originalErr) {
 			c.JSON(mappedErr.status, mappedErr)
@@ -155,18 +146,6 @@ func validationErrorsMap(errs validator.ValidationErrors) map[string]string {
 	}
 
 	return errsMap
-}
-
-func convertFieldErrorsToMap(errs []links.FieldError) map[string]string {
-	result := make(map[string]string, len(errs))
-
-	for _, ferr := range errs {
-		fieldName := mapFieldFromServiceToHTTP(ferr.Field)
-
-		result[fieldName] = ferr.Err.Error()
-	}
-
-	return result
 }
 
 func reportError(c *gin.Context, err error) {

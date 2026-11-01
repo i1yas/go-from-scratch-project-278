@@ -14,16 +14,6 @@ var fieldsMapping = []struct {
 	},
 }
 
-func mapFieldFromServiceToHTTP(name string) string {
-	for _, m := range fieldsMapping {
-		if m.serviceName == name {
-			return m.httpName
-		}
-	}
-
-	return name
-}
-
 func mapFieldFromHTTPtoService(name string) string {
 	for _, m := range fieldsMapping {
 		if m.httpName == name {
