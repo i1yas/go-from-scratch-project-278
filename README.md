@@ -49,17 +49,16 @@ make up                               # Запустить контейнер с
 ### Создание короткой ссылки
 
 ```bash
-curl -i -X POST http://localhost:8080/api/links \
-    -H 'Content-Type: application/json' \
-    -d '{"original_url":"https://google.com","short_name":"google"}'
+RESPONSE=$(
+    curl -s -X POST http://localhost:8080/api/links \
+        -H 'Content-Type: application/json' \
+        -d '{"original_url":"https://google.com","short_name":"google"}'
+)
+echo "$RESPONSE" | jq .
+ID=$(echo "$RESPONSE" | jq -r '.id')
 ```
 
 Ответ
-
-```
-HTTP/1.1 201 Created
-Content-Type: application/json
-```
 
 ```json
 {
@@ -77,18 +76,13 @@ Content-Type: application/json
 Установите переменную окружения `ID`, например `1`:
 
 ```bash
-export ID=1
-curl -i -X PUT http://localhost:8080/api/links/$ID \
+curl -s -X PUT http://localhost:8080/api/links/$ID \
     -H 'Content-Type: application/json' \
-    -d '{"original_url":"https://google.com/some-page","short_name":"google"}'
+    -d '{"original_url":"https://google.com/some-page","short_name":"google"}' |
+    jq .
 ```
 
 Ответ
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-```
 
 ```json
 {
@@ -102,16 +96,10 @@ Content-Type: application/json
 ### Посмотреть информацию о ссылке по ID
 
 ```bash
-export ID=1
-curl -i http://localhost:8080/api/links/$ID
+curl -s http://localhost:8080/api/links/$ID | jq .
 ```
 
 Ответ
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-```
 
 ```json
 {
@@ -125,16 +113,10 @@ Content-Type: application/json
 ### Посмотреть список ссылок
 Параметр `range` (в формате [Range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range)), выставляем `[0,99]` чтобы получить первые 100 ссылок:
 ```bash
-curl -i --get http://localhost:8080/api/links -d 'range=[0,99]'
+curl -s --get http://localhost:8080/api/links -d 'range=[0,99]' | jq .
 ```
 
 Ответ
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Range: links 0-0/1
-```
 
 ```json
 [
@@ -150,16 +132,10 @@ Content-Range: links 0-0/1
 ### Посмотреть список переходов по ссылкам
 Параметр `range` (в формате [Range](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Range)), выставляем `[0,99]` чтобы получить первые 100 переходов:
 ```bash
-curl -i --get http://localhost:8080/api/link_visits -d 'range=[0,99]'
+curl -s --get http://localhost:8080/api/link_visits -d 'range=[0,99]' | jq .
 ```
 
 Ответ
-
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Range: link_visits 0-1/2
-```
 
 ```json
 [
@@ -187,7 +163,6 @@ Content-Range: link_visits 0-1/2
 ### Удаление ссылки
 
 ```bash
-export ID=1
 curl -i -X DELETE http://localhost:8080/api/links/$ID
 ```
 
