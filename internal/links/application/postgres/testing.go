@@ -103,3 +103,10 @@ func visitsIDs(visits []links.Visit) []int64 {
 
 	return ids
 }
+
+func requirePrefix(t *testing.T, wantPrefix, got string) {
+	t.Helper()
+
+	gotPrefix := got[0:len(wantPrefix)]
+	require.Equal(t, wantPrefix, gotPrefix)
+}

@@ -318,18 +318,24 @@ func TestGetVisitsTotalCount(t *testing.T) {
 }
 
 func TestCreateVisit(t *testing.T) {
-	longURL := "http://example.com/" + strings.Repeat("x", 210)
-	longURLCyrillicHost := "http://пример.рф/" + strings.Repeat("x", 210)
+	baseURL := "http://example.com/"
+	longURL := baseURL + strings.Repeat("x", 1000)
 
-	longUserAgent := strings.Repeat("x", 220)
-	longUserAgentCyrillic := strings.Repeat("щ", 220)
+	baseURLCyrillicHost := "http://пример.рф/"
+	longURLCyrillicHost := baseURLCyrillicHost + strings.Repeat("x", 1000)
+
+	userAgentPrefix := "test-user-agent-"
+	longUserAgent := userAgentPrefix + strings.Repeat("x", 1000)
+	longUserAgentCyrillic := userAgentPrefix + strings.Repeat("щ", 1000)
 
 	cases := []struct {
-		name      string
-		ip        string
-		referer   string
-		userAgent string
-		status    int
+		name            string
+		ip              string
+		referer         string
+		userAgent       string
+		status          int
+		refererPrefix   string
+		userAgentPrefix string
 	}{
 		{
 			name:      "with optional fields",
@@ -349,28 +355,32 @@ func TestCreateVisit(t *testing.T) {
 			status: 302,
 		},
 		{
-			name:    "with long referer",
-			ip:      "1.2.3.4",
-			referer: longURL,
-			status:  302,
+			name:          "with long referer",
+			ip:            "1.2.3.4",
+			referer:       longURL,
+			refererPrefix: baseURL,
+			status:        302,
 		},
 		{
-			name:    "with long unicode referer",
-			ip:      "1.2.3.4",
-			referer: longURLCyrillicHost,
-			status:  302,
+			name:          "with long unicode referer",
+			ip:            "1.2.3.4",
+			referer:       longURLCyrillicHost,
+			refererPrefix: baseURLCyrillicHost,
+			status:        302,
 		},
 		{
-			name:      "with long user-agent",
-			ip:        "1.2.3.4",
-			userAgent: longUserAgent,
-			status:    302,
+			name:            "with long user-agent",
+			ip:              "1.2.3.4",
+			userAgent:       longUserAgent,
+			userAgentPrefix: userAgentPrefix,
+			status:          302,
 		},
 		{
-			name:      "with long unicode user-agent",
-			ip:        "1.2.3.4",
-			userAgent: longUserAgentCyrillic,
-			status:    302,
+			name:            "with long unicode user-agent",
+			ip:              "1.2.3.4",
+			userAgent:       longUserAgentCyrillic,
+			userAgentPrefix: userAgentPrefix,
+			status:          302,
 		},
 	}
 
@@ -411,8 +421,19 @@ func TestCreateVisit(t *testing.T) {
 
 				require.Equal(t, visit.LinkID, got.LinkID)
 				require.Equal(t, visit.IP, got.IP)
-				require.Equal(t, visit.Referer, got.Referer)
-				require.Equal(t, visit.UserAgent, got.UserAgent)
+
+				if tc.refererPrefix == "" {
+					require.Equal(t, visit.Referer, got.Referer)
+				} else {
+					requirePrefix(t, tc.refererPrefix, got.Referer)
+				}
+
+				if tc.userAgentPrefix == "" {
+					require.Equal(t, visit.UserAgent, got.UserAgent)
+				} else {
+					requirePrefix(t, tc.userAgentPrefix, got.UserAgent)
+				}
+
 				require.Equal(t, visit.Status, got.Status)
 			})
 		})
