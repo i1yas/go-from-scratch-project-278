@@ -167,7 +167,7 @@ Content-Range: link_visits 0-1/2
         "id": 1,
         "link_id": 1,
         "ip": "127.0.0.1",
-        "referer": "",
+        "reffer": "",
         "status": 302,
         "user_agent": "curl/7.81.0",
         "created_at": "2026-10-11T17:22:22Z"
@@ -176,10 +176,10 @@ Content-Range: link_visits 0-1/2
         "id": 2,
         "link_id": 1,
         "ip": "::1",
-        "referer": "http://mysite",
+        "reffer": "http://mysite",
         "status": 302,
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
-        "created_at": "2026-10-25:13:10:07Z"
+        "created_at": "2026-10-25T13:10:07Z"
     }
 ]
 ```
