@@ -619,10 +619,12 @@ func TestApp_StartupErrors(t *testing.T) {
 	})
 
 	t.Run("db down", func(t *testing.T) {
+		downDBURL := fmt.Sprintf("postgres://test:test@%s/dbdown?sslmode=disable", pickFreeAddr(t))
+
 		_, err := New(t.Context(), config.Config{
 			Env: config.EnvProduction,
 			Database: config.Database{
-				URL: "postgres://test:test@localhost:1234/dbdown?sslmode=disable",
+				URL: downDBURL,
 			},
 			App: config.App{
 				BaseURL: "http://example.com",
