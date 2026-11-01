@@ -12,7 +12,7 @@ func TestNewLink(t *testing.T) {
 		originalURL string
 		shortcode   string
 		want        Link
-		errs        []FieldError
+		err         error
 	}{
 		{
 			name:        "valid link",
@@ -27,46 +27,21 @@ func TestNewLink(t *testing.T) {
 			name:        "error, empty url",
 			originalURL: "",
 			shortcode:   "test",
-			errs: []FieldError{
-				{"original_url", ErrInvlalidURL},
-			},
+			err:         ErrInvlalidURL,
 		},
 		{
 			name:        "error, empty shortcode",
 			originalURL: "http://test.com",
 			shortcode:   "",
-			errs: []FieldError{
-				{"shortcode", ErrInvlalidShortCode},
-			},
-		},
-		{
-			name:        "error, both original url and shortcode are empty",
-			originalURL: "",
-			shortcode:   "",
-			errs: []FieldError{
-				{"original_url", ErrInvlalidURL},
-				{"shortcode", ErrInvlalidShortCode},
-			},
+			err:         ErrInvlalidShortCode,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := NewLink(tc.originalURL, tc.shortcode)
-
-			if tc.errs == nil {
-				require.NoError(t, err)
-				require.Equal(t, tc.want, got)
-			} else {
-				var verr *ValidationError
-				require.ErrorAs(t, err, &verr)
-				require.Equal(t, len(tc.errs), len(verr.Fields))
-
-				for _, ferr := range tc.errs {
-					require.ErrorIs(t, err, ferr.Err)
-					require.ErrorContains(t, err, ferr.Field)
-				}
-			}
+			require.Equal(t, tc.want, got)
+			require.ErrorIs(t, err, tc.err)
 		})
 	}
 }

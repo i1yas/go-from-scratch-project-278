@@ -57,7 +57,6 @@ func TestUpdateLink(t *testing.T) {
 			ShortCode:   "",
 		})
 
-		require.ErrorContains(t, err, "shortcode:")
 		require.ErrorIs(t, err, links.ErrInvlalidShortCode)
 		require.Equal(t, 0, len(store.Calls))
 	})
@@ -78,7 +77,6 @@ func TestUpdateLink(t *testing.T) {
 			ShortCode:   "code",
 		})
 
-		require.ErrorContains(t, err, "original_url:")
 		require.ErrorIs(t, err, links.ErrInvlalidURL)
 		require.Equal(t, 0, len(store.Calls))
 	})

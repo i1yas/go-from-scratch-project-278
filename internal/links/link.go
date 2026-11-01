@@ -9,15 +9,13 @@ type Link struct {
 
 // NewLink takes raw input, validates and creates Link
 func NewLink(originalURLRaw, shortcodeRaw string) (Link, error) {
-	var verr ValidationError
-
 	originalURL, err := NewURL(originalURLRaw)
-	verr.add("original_url", err)
+	if err != nil {
+		return Link{}, err
+	}
 
 	shortcode, err := NewShortCode(shortcodeRaw)
-	verr.add("shortcode", err)
-
-	if err := verr.err(); err != nil {
+	if err != nil {
 		return Link{}, err
 	}
 
