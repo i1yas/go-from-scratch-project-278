@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -95,6 +96,13 @@ var internalErrors = []error{
 }
 
 func handleError(logger *slog.Logger, c *gin.Context, err error) {
+	if errors.Is(err, context.Canceled) {
+		// NOTE: use nginx convention
+		c.Status(499)
+
+		return
+	}
+
 	ok := errors.As(err, new(*http.MaxBytesError))
 	if ok {
 		c.Status(http.StatusRequestEntityTooLarge)
