@@ -422,6 +422,20 @@ func TestCreateVisit(t *testing.T) {
 			userAgent:     maxUserAgentWithCyrillic,
 			wantUserAgent: maxUserAgentWithCyrillic,
 		},
+		{
+			name:        "with referer that contains invalid bytes",
+			ip:          "2001:db8::1",
+			status:      302,
+			referer:     "http://test.com/" + string([]byte{255, 255}) + "hello",
+			wantReferer: "http://test.com/\uFFFDhello",
+		},
+		{
+			name:          "with user-agent that contains invalid bytes",
+			ip:            "2001:db8::1",
+			status:        302,
+			userAgent:     string([]byte{255, 255}) + "user-agent",
+			wantUserAgent: "\uFFFDuser-agent",
+		},
 	}
 
 	for _, tc := range cases {
