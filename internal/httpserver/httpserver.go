@@ -36,7 +36,7 @@ func NewRouter(env config.Environment, logger *slog.Logger) *gin.Engine {
 			WaitForDelivery: false,
 			Timeout:         5 * time.Second,
 		}),
-		middleware.MaxBodySize(2*kb),
+		middleware.MaxBodySize(3*kb),
 		middleware.RequestID(),
 		middleware.Slog(logger),
 		middleware.Timeout(),
