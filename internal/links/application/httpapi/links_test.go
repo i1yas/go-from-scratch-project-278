@@ -343,12 +343,11 @@ func TestCreateLink(t *testing.T) {
 	code := "link-101"
 
 	cases := []struct {
-		name          string
-		requestBody   string
-		setup         func(svg *fakeLinkService)
-		wantStatus    int
-		wantBody      string
-		wantErrFields []string
+		name        string
+		requestBody string
+		setup       func(svg *fakeLinkService)
+		wantStatus  int
+		wantBody    string
 	}{
 		{
 			name: "create with shortcode",
@@ -411,9 +410,27 @@ func TestCreateLink(t *testing.T) {
 			requestBody: `{
 				"original_url": "bla"
 			}`,
-			setup:         func(*fakeLinkService) {},
-			wantStatus:    422,
-			wantErrFields: []string{"original_url"},
+			setup:      func(*fakeLinkService) {},
+			wantStatus: 422,
+			wantBody: `{
+				"errors": {
+					"original_url": "invalid URL"
+				}
+			}`,
+		},
+		{
+			name: "error invalid shortcode",
+			requestBody: `{
+				"original_url": "http://test.com",
+				"short_name": "xx"
+			}`,
+			setup:      func(*fakeLinkService) {},
+			wantStatus: 422,
+			wantBody: `{
+				"errors": {
+					"short_name": "invalid short name"
+				}
+			}`,
 		},
 		{
 			name: "shortcode conflict",
@@ -429,8 +446,12 @@ func TestCreateLink(t *testing.T) {
 					}).
 					Return(links.Link{}, application.ErrShortCodeConflict)
 			},
-			wantStatus:    422,
-			wantErrFields: []string{"short_name"},
+			wantStatus: 422,
+			wantBody: `{
+				"errors": {
+					"short_name": "short name already in use"
+				}
+			}`,
 		},
 		{
 			name:        "error invalid request",
@@ -468,10 +489,6 @@ func TestCreateLink(t *testing.T) {
 
 			if tc.wantBody != "" {
 				require.JSONEq(t, tc.wantBody, w.Body.String())
-			}
-
-			if tc.wantErrFields != nil {
-				requireFieldErrors(t, w.Body.Bytes(), tc.wantErrFields)
 			}
 
 			linksSvc.AssertExpectations(t)

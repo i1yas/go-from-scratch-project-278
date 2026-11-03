@@ -146,11 +146,24 @@ func handleInternalError(logger *slog.Logger, c *gin.Context, err error) {
 	reportError(c, err)
 }
 
+var validationMessages = map[string]string{
+	"link_url":  "invalid URL",
+	"shortcode": "invalid short name",
+	"required":  "field is required",
+}
+
+const fallbackValidationMessage = "field contains error"
+
 func validationErrorsMap(errs validator.ValidationErrors) map[string]string {
 	errsMap := make(map[string]string, len(errs))
 
 	for _, vErr := range errs {
-		errsMap[vErr.Field()] = vErr.Error()
+		message, ok := validationMessages[vErr.Tag()]
+		if !ok {
+			message = fallbackValidationMessage
+		}
+
+		errsMap[vErr.Field()] = message
 	}
 
 	return errsMap
