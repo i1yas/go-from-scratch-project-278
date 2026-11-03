@@ -250,19 +250,33 @@ func TestApp_RequestBigBody(t *testing.T) {
 
 	var createdLink linkDTO
 
+	mathA := "𝒜"
+	mathAEscaped := "\\ud835\\udc9c"
+
+	mathB := "𝔅"
+	mathBEscaped := "\\ud835\\udd05"
+
+	questionMarkEscaped := "\\u003f"
+
 	step(t, "create link", func(t *testing.T) {
-		urlBase := "http://x?"
-		symbolRepeats := 200 - len(urlBase)
-		// NOTE: json encode symbol &
-		url := urlBase + strings.Repeat("\u0026", symbolRepeats)
+		urlBase := "http://a?"
+		url := urlBase + strings.Repeat(mathA, 200-len(urlBase))
 
-		// NOTE: 𝒜 - math script symbol, takes 4 bytes
-		code := strings.Repeat("𝒜", 32)
+		code := strings.Repeat(mathA, 32)
 
-		w := makeRequest(t, app, "POST", "/api/links", linkDTO{
-			OriginalURL: url,
-			Shortname:   code,
-		})
+		urlEscaped := "http://" + mathAEscaped +
+			questionMarkEscaped + strings.Repeat(mathAEscaped, 200-len(urlBase))
+		codeEscaped := strings.Repeat(mathAEscaped, 32)
+
+		reqBody := fmt.Sprintf(`{"original_url":"%s","short_name":"%s"}`, urlEscaped, codeEscaped)
+
+		bodyReader := strings.NewReader(reqBody)
+
+		req, err := http.NewRequest("POST", "/api/links", bodyReader)
+		require.NoError(t, err)
+
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
 
 		require.Equal(t, 201, w.Code)
 
@@ -274,18 +288,24 @@ func TestApp_RequestBigBody(t *testing.T) {
 	})
 
 	step(t, "update link", func(t *testing.T) {
-		urlBase := "http://y?"
-		symbolRepeats := 200 - len(urlBase)
-		url := urlBase + strings.Repeat("\u0026", symbolRepeats)
+		urlBase := "http://b?"
+		url := urlBase + strings.Repeat(mathB, 200-len(urlBase))
 
-		code := strings.Repeat("𝔅", 32)
+		code := strings.Repeat(mathB, 32)
 
-		require.GreaterOrEqual(t, len(code), 32)
+		urlEscaped := "http://" + mathBEscaped +
+			questionMarkEscaped + strings.Repeat(mathBEscaped, 200-len(urlBase))
+		codeEscaped := strings.Repeat(mathBEscaped, 32)
 
-		w := makeRequest(t, app, "PUT", linkURL(createdLink.ID), linkDTO{
-			OriginalURL: url,
-			Shortname:   code,
-		})
+		reqBody := fmt.Sprintf(`{"original_url":"%s","short_name":"%s"}`, urlEscaped, codeEscaped)
+
+		bodyReader := strings.NewReader(reqBody)
+
+		req, err := http.NewRequest("PUT", linkURL(createdLink.ID), bodyReader)
+		require.NoError(t, err)
+
+		w := httptest.NewRecorder()
+		app.Router.ServeHTTP(w, req)
 
 		require.Equal(t, 200, w.Code)
 
