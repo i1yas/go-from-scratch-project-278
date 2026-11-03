@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"strings"
 	"time"
 )
 
@@ -43,11 +44,17 @@ func NewVisit(
 		return Visit{}, fmt.Errorf("%w: %w: %w", ErrInvalidVisit, ErrInvalidIP, err)
 	}
 
+	userAgent = truncate(userAgent, userAgentMaxLength)
+	userAgent = strings.ToValidUTF8(userAgent, "\uFFFD")
+
+	referer = truncate(referer, refererMaxLength)
+	referer = strings.ToValidUTF8(referer, "\uFFFD")
+
 	return Visit{
 		LinkID:    linkID,
 		IP:        parsedIP,
 		Referer:   truncate(referer, refererMaxLength),
-		UserAgent: truncate(userAgent, userAgentMaxLength),
+		UserAgent: userAgent,
 		Status:    status,
 	}, nil
 }

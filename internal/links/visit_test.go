@@ -152,6 +152,20 @@ func TestNewVisit(t *testing.T) {
 		require.Equal(t, veryLongURL[0:refererMaxLength], visit.Referer)
 	})
 
+	t.Run("long referer with invalid bytes truncated", func(t *testing.T) {
+		baseURL := "http://example.com/"
+		veryLongURL := baseURL + strings.Repeat("x", refererMaxLength-len(baseURL)-2) + string([]byte{255, 255, 255, 255})
+		visit, err := NewVisit(
+			1,
+			"1.2.3.4",
+			veryLongURL,
+			"",
+			302,
+		)
+		require.NoError(t, err)
+		require.Equal(t, veryLongURL[0:refererMaxLength-2]+"\uFFFD", visit.Referer)
+	})
+
 	t.Run("long user-agent truncated", func(t *testing.T) {
 		longUserAgent := strings.Repeat("x", userAgentMaxLength*2)
 		visit, err := NewVisit(
@@ -163,5 +177,19 @@ func TestNewVisit(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, longUserAgent[0:userAgentMaxLength], visit.UserAgent)
+	})
+
+	t.Run("long user-agent with invalid bytes truncated", func(t *testing.T) {
+		longUserAgent := strings.Repeat("x", userAgentMaxLength-2) + string([]byte{255, 255, 255, 255})
+		visit, err := NewVisit(
+			1,
+			"1.2.3.4",
+			"",
+			longUserAgent,
+			302,
+		)
+
+		require.NoError(t, err)
+		require.Equal(t, longUserAgent[0:userAgentMaxLength-2]+"\uFFFD", visit.UserAgent)
 	})
 }
