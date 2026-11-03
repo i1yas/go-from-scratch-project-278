@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/require"
 
@@ -318,69 +319,108 @@ func TestGetVisitsTotalCount(t *testing.T) {
 }
 
 func TestCreateVisit(t *testing.T) {
+	const (
+		maxRefererLen   = 255
+		maxUserAgentLen = 255
+	)
+
 	baseURL := "http://example.com/"
-	longURL := baseURL + strings.Repeat("x", 1000)
+	maxReferer := baseURL + strings.Repeat("x", maxRefererLen-utf8.RuneCountInString(baseURL))
 
 	baseURLCyrillicHost := "http://пример.рф/"
-	longURLCyrillicHost := baseURLCyrillicHost + strings.Repeat("x", 1000)
+	maxRefererWithCyrillicHost := baseURLCyrillicHost +
+		strings.Repeat("x", maxRefererLen-utf8.RuneCountInString(baseURLCyrillicHost))
 
-	userAgentPrefix := "test-user-agent-"
-	longUserAgent := userAgentPrefix + strings.Repeat("x", 1000)
-	longUserAgentCyrillic := userAgentPrefix + strings.Repeat("щ", 1000)
+	maxUserAgent := strings.Repeat("x", maxUserAgentLen)
+	maxUserAgentWithCyrillic := strings.Repeat("щ", 100) + strings.Repeat("x", maxUserAgentLen-100)
 
 	cases := []struct {
-		name            string
-		ip              string
-		referer         string
-		userAgent       string
-		status          int
-		refererPrefix   string
-		userAgentPrefix string
+		name          string
+		ip            string
+		referer       string
+		userAgent     string
+		status        int
+		wantReferer   string
+		wantUserAgent string
 	}{
 		{
-			name:      "with optional fields",
-			ip:        "1.2.3.4",
-			referer:   "http://test.com",
-			userAgent: "user-agent",
-			status:    302,
-		},
-		{
-			name:   "without optional fields",
-			ip:     "1.2.3.4",
-			status: 302,
-		},
-		{
-			name:   "with ipv6",
-			ip:     "2001:db8::1",
-			status: 302,
-		},
-		{
-			name:          "with long referer",
+			name:          "with optional fields",
 			ip:            "1.2.3.4",
-			referer:       longURL,
-			refererPrefix: baseURL,
+			referer:       "http://test.com",
+			userAgent:     "user-agent",
 			status:        302,
+			wantReferer:   "http://test.com",
+			wantUserAgent: "user-agent",
 		},
 		{
-			name:          "with long unicode referer",
+			name:          "without optional fields",
 			ip:            "1.2.3.4",
-			referer:       longURLCyrillicHost,
-			refererPrefix: baseURLCyrillicHost,
 			status:        302,
+			wantReferer:   "",
+			wantUserAgent: "",
 		},
 		{
-			name:            "with long user-agent",
-			ip:              "1.2.3.4",
-			userAgent:       longUserAgent,
-			userAgentPrefix: userAgentPrefix,
-			status:          302,
+			name:          "with ipv6",
+			ip:            "2001:db8::1",
+			status:        302,
+			wantReferer:   "",
+			wantUserAgent: "",
 		},
 		{
-			name:            "with long unicode user-agent",
-			ip:              "1.2.3.4",
-			userAgent:       longUserAgentCyrillic,
-			userAgentPrefix: userAgentPrefix,
-			status:          302,
+			name:        "with max-len referer",
+			ip:          "2001:db8::1",
+			referer:     maxReferer,
+			status:      302,
+			wantReferer: maxReferer,
+		},
+		{
+			name:        "with almost max-len referer",
+			ip:          "2001:db8::1",
+			referer:     maxReferer[0 : len(maxReferer)-1],
+			status:      302,
+			wantReferer: maxReferer[0 : len(maxReferer)-1],
+		},
+		{
+			name:        "with too long referer",
+			ip:          "2001:db8::1",
+			referer:     maxReferer + "x",
+			status:      302,
+			wantReferer: maxReferer,
+		},
+		{
+			name:        "with max-len cyrillic referer",
+			ip:          "2001:db8::1",
+			referer:     maxRefererWithCyrillicHost,
+			status:      302,
+			wantReferer: maxRefererWithCyrillicHost,
+		},
+		{
+			name:          "with max-len user-agent",
+			ip:            "2001:db8::1",
+			status:        302,
+			userAgent:     maxUserAgent,
+			wantUserAgent: maxUserAgent,
+		},
+		{
+			name:          "with almost max-len user-agent",
+			ip:            "2001:db8::1",
+			status:        302,
+			userAgent:     maxUserAgent[0 : len(maxUserAgent)-1],
+			wantUserAgent: maxUserAgent[0 : len(maxUserAgent)-1],
+		},
+		{
+			name:          "with too long user-agent",
+			ip:            "2001:db8::1",
+			status:        302,
+			userAgent:     maxUserAgent + "x",
+			wantUserAgent: maxUserAgent,
+		},
+		{
+			name:          "with max-len cyrillic user-agent",
+			ip:            "2001:db8::1",
+			status:        302,
+			userAgent:     maxUserAgentWithCyrillic,
+			wantUserAgent: maxUserAgentWithCyrillic,
 		},
 	}
 
@@ -421,19 +461,8 @@ func TestCreateVisit(t *testing.T) {
 
 				require.Equal(t, visit.LinkID, got.LinkID)
 				require.Equal(t, visit.IP, got.IP)
-
-				if tc.refererPrefix == "" {
-					require.Equal(t, visit.Referer, got.Referer)
-				} else {
-					requirePrefix(t, tc.refererPrefix, got.Referer)
-				}
-
-				if tc.userAgentPrefix == "" {
-					require.Equal(t, visit.UserAgent, got.UserAgent)
-				} else {
-					requirePrefix(t, tc.userAgentPrefix, got.UserAgent)
-				}
-
+				require.Equal(t, tc.wantReferer, got.Referer)
+				require.Equal(t, tc.wantUserAgent, got.UserAgent)
 				require.Equal(t, visit.Status, got.Status)
 			})
 		})
