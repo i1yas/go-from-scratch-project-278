@@ -1,0 +1,292 @@
+openapi: 3.1.0
+
+info:
+  title: URL shortener
+  description: URL shortener allows to create short links with specified names. It also records visits.
+  version: 1.0.0
+
+paths:
+  /api/links:
+    get:
+      summary: Get links
+      tags: ['link']
+      operationId: getLinks
+      parameters:
+        - $ref: '#/components/parameters/RangeQueryParam'
+        - $ref: '#/components/parameters/SortQueryParam'
+      responses:
+        '200':
+          description: List of links
+          headers:
+            Content-Range:
+              description: range of gotten links
+              schema:
+                type: string
+                example: "links 0-10/120"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Link'
+
+    post:
+      summary: Create a link
+      tags: ['link']
+      operationId: createLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkRequest'
+      responses:
+        '201':
+          description: Link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkError'
+        '422':
+          description: Wrong params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkError'
+  
+  /api/links/{link_id}:
+    get:
+      summary: Get link by ID
+      tags: ['link']
+      operationId: getLinkByID
+      parameters:
+        - $ref: '#/components/parameters/LinkID'
+      responses:
+        '200':
+          description: Link found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '404':
+          description: Link not found
+    put:
+      summary: Edit link
+      tags: ['link']
+      operationId: editLink
+      parameters:
+        - $ref: '#/components/parameters/LinkID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditLinkRequest'
+      responses:
+        '200':
+          description: Link edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkError'
+        '404':
+          description: Link not found
+        '422':
+          description: Wrong params
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkError'
+    delete:
+      summary: Delete link
+      tags: ['link']
+      operationId: deleteLink
+      parameters:
+        - $ref: '#/components/parameters/LinkID'
+      responses:
+        '204':
+          description: Link deleted
+        '404':
+          description: Link not found
+
+  /api/link_visits:
+    get:
+      summary: Get visits
+      tags: ['visit']
+      operationId: getVisits
+      parameters:
+        - $ref: '#/components/parameters/RangeQueryParam'
+        - $ref: '#/components/parameters/SortQueryParam'
+      responses:
+        '200':
+          description: List of visits
+          headers:
+            Content-Range:
+              description: range of gotten visits
+              schema:
+                type: string
+                example: "link_visits 0-10/120"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Visit'
+  /r/{code}:
+    get:
+      summary: Resolve link
+      tags: ["link"]
+      operationId: resolveLink
+      parameters:
+        - name: code
+          description: short name of link
+          in: path
+          required: true
+          schema:
+            type: string
+            example: test
+      responses:
+        '302':
+          description: Redirect
+          headers:
+            Location:
+              description: original url
+              schema:
+                type: string
+                format: uri
+
+components:
+  schemas:
+    Link:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        original_url:
+          type: string
+          format: uri
+          example: http://example.com
+        short_name:
+          type: string
+          example: test
+        short_url:
+          type: string
+          format: uri
+          example: http://myservice/r/test
+      required:
+        - id
+        - original_url
+        - short_name
+        - short_url
+
+    Visit:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        link_id:
+          type: integer
+          format: int64
+          example: 1
+        ip:
+          example: "1.2.3.4"
+          oneOf:
+            - type: string
+              format: ipv4
+            - type: string
+              format: ipv6
+        user_agent:
+          type: string
+        referer:
+          type: string
+        status:
+          type: integer
+          example: 302
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - link_id
+        - ip
+        - status
+        - created_at
+
+    CreateLinkRequest:
+      type: object
+      properties:
+        original_url:
+          type: string
+          format: uri
+        short_name:
+          type: string
+      required:
+        - original_url
+
+    EditLinkRequest:
+      type: object
+      properties:
+        original_url:
+          type: string
+          format: uri
+        short_name:
+          type: string
+      required:
+        - original_url
+        - short_name
+
+    LinkError:
+      type: object
+      properties:
+        error:
+          type: string
+        errors:
+          type: object
+          properties:
+            original_url:
+              type: string
+            short_name:
+              type: string
+  
+  parameters:
+    LinkID:
+      name: link_id
+      in: path
+      required: true
+      description: link id
+      schema:
+        type: integer
+        format: int64
+        example: 1
+    RangeQueryParam:
+      name: range
+      in: query
+      required: false
+      description: Inclusive range [start,end]
+      schema:
+        type: string
+        example: '[0,9]'
+    SortQueryParam:
+      name: sort
+      in: query
+      required: false
+      description: Sort [field,order]
+      schema:
+        type: string
+        example: '["id","ASC"]'
