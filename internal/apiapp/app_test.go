@@ -27,6 +27,7 @@ import (
 
 func TestApp_HappyPath(t *testing.T) {
 	dbURL := setupTestDB(t)
+	clearTestDB(t)
 
 	ctx := t.Context()
 
@@ -229,6 +230,7 @@ func TestApp_HappyPath(t *testing.T) {
 
 func TestApp_RequestBigBody(t *testing.T) {
 	dbURL := setupTestDB(t)
+	clearTestDB(t)
 
 	ctx := t.Context()
 
@@ -325,6 +327,7 @@ func TestApp_RequestBigBody(t *testing.T) {
 
 func TestApp_LongBaseURLAndShortcode(t *testing.T) {
 	dbURL := setupTestDB(t)
+	clearTestDB(t)
 
 	ctx := t.Context()
 
@@ -399,6 +402,7 @@ func TestApp_LongBaseURLAndShortcode(t *testing.T) {
 
 func TestApp_ResolveLinkWithLongHeaders(t *testing.T) {
 	dbURL := setupTestDB(t)
+	clearTestDB(t)
 
 	ctx := t.Context()
 
@@ -539,6 +543,7 @@ func TestApp_InvalidSort(t *testing.T) {
 
 func TestApp_RunAndStop(t *testing.T) {
 	dbURL := setupTestDB(t)
+	clearTestDB(t)
 
 	ctx := t.Context()
 
