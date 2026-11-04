@@ -213,7 +213,7 @@ components:
               format: ipv6
         user_agent:
           type: string
-        referer:
+        reffer:
           type: string
         status:
           type: integer
